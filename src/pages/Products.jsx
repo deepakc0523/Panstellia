@@ -12,9 +12,8 @@ const ProductsPage = () => {
 
   const visibleProducts = products.filter((p) => (p.productStatus || 'available') === 'available');
 
-
-  
   const [filteredProducts, setFilteredProducts] = useState([]);
+
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   
@@ -33,9 +32,13 @@ const ProductsPage = () => {
     { value: 'rating', label: 'Rating' }
   ];
 
+  const searchQuery = searchParams.get('search') || '';
+  const categoryQuery = searchParams.get('category') || '';
+
   useEffect(() => {
-    const search = searchParams.get('search');
-    const category = searchParams.get('category');
+    const search = searchQuery;
+    const category = categoryQuery;
+
     
     let result;
       const base = visibleProducts;
@@ -113,7 +116,8 @@ const ProductsPage = () => {
 
     
     setFilteredProducts(result);
-  }, [products, visibleProducts, filters, searchParams]);
+  }, [products, filters, searchQuery, categoryQuery]);
+
 
 
   const handleFilterChange = (key, value) => {

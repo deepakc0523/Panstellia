@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { getDirectImageUrl } from '../utils/imageUtils';
 import SEOHelmet from '../utils/seoHelmet';
+import { getCategoryLabel } from '../utils/categoryLabels';
 
 const CartPage = () => {
   const { user } = useAuth();
