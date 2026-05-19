@@ -5,6 +5,7 @@ import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/UI/ProductCard';
 import SEOHelmet from '../utils/seoHelmet';
 import { getOrganizationSchema } from '../utils/structuredData';
+import { getCategoryLabel } from '../utils/categoryLabels';
 
 const HomePage = () => {
   const { getFeaturedProducts, products, loading } = useProducts();
@@ -61,8 +62,8 @@ const HomePage = () => {
     <div className="min-h-screen">
       <SEOHelmet 
         title="Panstellia | Luxury Necklace Jewelry Collections"
-        description="Discover exquisite necklace jewelry collections from Panstellia. Premium gold, silver, and handcrafted pieces for weddings, parties, and everyday elegance."
-        keywords="luxury necklaces, gold necklaces, silver necklaces, Lux Wear jewelry, handcrafted necklaces, jewelry store"
+        description="Discover exquisite necklace jewelry collections from Panstellia. Premium Luxe Ring, Royal Braces, Elite Series, and Piercings pieces for weddings, parties, and everyday elegance."
+        keywords="luxury necklaces, luxe ring necklaces, royal braces necklaces, elite series jewelry, piercing jewelry, handcrafted necklaces, jewelry store"
         canonical="https://panstellia.com"
         structuredData={getOrganizationSchema()}
       />
@@ -87,7 +88,7 @@ const HomePage = () => {
                 <span className="text-gradient block">Every Jewellery</span>
               </h1>
               <p className="mt-6 text-lg text-luxury-600 max-w-lg">
-                Discover our exquisite collection of necklaces - from Lux Wear elegance to party glamour.
+                Discover our exquisite collection of necklaces - from Elite Series elegance to piercing glamour.
                 Each piece crafted to make you shine.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
@@ -96,7 +97,7 @@ const HomePage = () => {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
                 <Link to="/products?category=Lux Wear" className="btn-secondary inline-flex items-center justify-center">
-                  Lux Wear Collection
+                  {getCategoryLabel('Lux Wear')} Collection
                 </Link>
               </div>
             </motion.div>
@@ -166,12 +167,12 @@ const HomePage = () => {
                   <div className="relative overflow-hidden rounded-xl aspect-[3/4]">
                     <img 
                       src={category.image} 
-                      alt={category.name}
+                      alt={getCategoryLabel(category.name)}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <h3 className="text-white font-serif text-xl font-semibold">{category.name}</h3>
+                      <h3 className="text-white font-serif text-xl font-semibold">{getCategoryLabel(category.name)}</h3>
                       <p className="text-white/80 text-sm">{category.count} Products</p>
                     </div>
                   </div>
@@ -243,7 +244,7 @@ const HomePage = () => {
                 Get upto 25% off on our Premium collection. Make your special day even more memorable with our exquisite designs.
               </p>
               <Link 
-                to="/products?category=lux wear" 
+                to="/products?category=Lux%20Wear" 
                 className="mt-6 inline-flex items-center px-6 py-3 bg-white text-gold-600 rounded-lg font-medium hover:bg-luxury-50 transition-colors"
               >
                 View Collection
@@ -253,7 +254,7 @@ const HomePage = () => {
             <div className="hidden md:block">
               <img 
                 src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600" 
-                alt="Lux Wear Collection"
+                alt="Elite Series Collection"
                 className="rounded-xl shadow-2xl"
               />
             </div>

@@ -82,7 +82,7 @@ const CartPage = () => {
                   <Link to={`/product/${item.id}`} className="hover:text-gold-600">
                     <h3 className="font-medium text-luxury-900 line-clamp-2">{item.name}</h3>
                   </Link>
-                  <p className="text-sm text-luxury-500 mt-1">{item.category}</p>
+                  <p className="text-sm text-luxury-500 mt-1">{getCategoryLabel(item.category)}</p>
                   <p className="text-lg font-semibold text-luxury-900 mt-2">
                     ₹{item.price?.toLocaleString()}
                   </p>

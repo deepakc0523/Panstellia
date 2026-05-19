@@ -15,6 +15,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { getDirectImageUrl } from '../utils/imageUtils';
+import { getCategoryLabel } from '../utils/categoryLabels';
 import RevenueAdmin from './RevenueAdmin';
 import ReportsAdmin from './ReportsAdmin';
 
@@ -537,7 +538,7 @@ const AdminPage = () => {
                           >
                             {categories.map((cat) => (
                               <option key={cat} value={cat}>
-                                {cat}
+                                {getCategoryLabel(cat)}
                               </option>
                             ))}
                           </select>
@@ -869,7 +870,7 @@ const AdminPage = () => {
                           </td>
                           <td className="px-4 py-3 text-luxury-900">{product.name}</td>
                           <td className="px-4 py-3">
-                            <span className="badge badge-gold">{product.category}</span>
+                            <span className="badge badge-gold">{getCategoryLabel(product.category)}</span>
                           </td>
                           <td className="px-4 py-3 text-luxury-900">₹{product.price?.toLocaleString()}</td>
                           <td className="px-4 py-3">

@@ -1,6 +1,9 @@
-- [x] Update ReportsAdmin page to add Export to Excel button.
-- [x] Implement export handler that downloads filtered report data as an Excel-compatible .xls/TSV/CSV Blob.
-- [x] Ensure exported columns match the table and formatting (date/money) is consistent.
-- [ ] Verify export respects all filters.
+# TODO
+
+- [x] Fix runtime crash in `src/components/UI/ProductCard.jsx`: `getCategoryLabel is not defined`.
+- [x] Import `getCategoryLabel` from `src/utils/categoryLabels.js`.
+  - [x] Run frontend build (vite build) to confirm the crash is resolved.
+- [ ] (Optional) Address React Router future-flag warnings once the app is running again.
+
 
 

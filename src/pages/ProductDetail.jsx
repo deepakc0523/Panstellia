@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { toast } from 'react-toastify';
 import { getProductImageUrls, getDirectImageUrl } from '../utils/imageUtils';
+import { getCategoryLabel } from '../utils/categoryLabels';
 
 import SEOHelmet from '../utils/seoHelmet';
 import { getProductSchema } from '../utils/structuredData';
@@ -100,8 +101,8 @@ const ProductDetailPage = () => {
     <div className="min-h-screen bg-luxury-50 py-8">
       <SEOHelmet 
         title={`${product.name} | Buy at Panstellia`}
-        description={product.description || `Shop ${product.name} - Premium ${product.category} jewelry from Panstellia. ${product.inStock ? 'In stock' : 'Out of stock'}.`}
-        keywords={`${product.name}, ${product.category} necklace, jewelry`}
+        description={product.description || `Shop ${product.name} - Premium ${getCategoryLabel(product.category)} jewelry from Panstellia. ${product.inStock ? 'In stock' : 'Out of stock'}.`}
+        keywords={`${product.name}, ${getCategoryLabel(product.category)} necklace, jewelry`}
         canonical={`https://panstellia.com/product/${product.id}`}
         ogImage={imageUrl}
         structuredData={getProductSchema({
@@ -122,7 +123,7 @@ const ProductDetailPage = () => {
           <span>/</span>
           <Link to="/products" className="hover:text-gold-600">Shop</Link>
           <span>/</span>
-          <Link to={`/products?category=${product.category}`} className="hover:text-gold-600">{product.category}</Link>
+          <Link to={`/products?category=${product.category}`} className="hover:text-gold-600">{getCategoryLabel(product.category)}</Link>
           <span>/</span>
           <span className="text-luxury-900">{product.name}</span>
         </nav>
@@ -233,7 +234,7 @@ const ProductDetailPage = () => {
           {/* Details */}
           <div>
             <span className="text-gold-600 font-medium uppercase tracking-wider text-sm">
-              {product.category}
+              {getCategoryLabel(product.category)}
             </span>
             <h1 className="mt-2 font-serif text-3xl md:text-4xl font-bold text-luxury-900">
               {product.name}

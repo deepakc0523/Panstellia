@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { getCategoryLabel } from '../../utils/categoryLabels';
 
 const Footer = () => {
   return (
@@ -10,7 +11,7 @@ const Footer = () => {
           <div>
             <img src="/favicon.svg" alt="Panstellia" className="h-12 w-auto mb-4" />
             <p className="text-luxury-300 text-sm leading-relaxed">
-              Discover exquisite necklace jewelry for every occasion. From Lux Wear elegance to party glamour, we bring you the finest pieces.
+              Discover exquisite necklace jewelry for every occasion. From Elite Series elegance to piercing glamour, we bring you the finest pieces.
             </p>
             <div className="flex space-x-4 mt-4">
               <a href="https://www.instagram.com/panstellia" className="text-luxury-300 hover:text-gold-400 transition-colors">
@@ -38,17 +39,17 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/products?category=Gold" className="text-luxury-300 hover:text-gold-400 transition-colors">
-                  Gold Collection
+                  {getCategoryLabel('Gold')} Collection
                 </Link>
               </li>
               <li>
                 <Link to="/products?category=Lux Wear" className="text-luxury-300 hover:text-gold-400 transition-colors">
-                  Lux Wear Collection
+                  {getCategoryLabel('Lux Wear')} Collection
                 </Link>
               </li>
               <li>
               <Link to="/products?category=Party%20Wear" className="text-luxury-300 hover:text-gold-400 transition-colors">
-                  Party Wear
+                  {getCategoryLabel('Party Wear')}
                 </Link>
               </li>
               <li>

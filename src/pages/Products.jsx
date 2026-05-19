@@ -4,6 +4,7 @@ import { Filter, X, Grid, List } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/UI/ProductCard';
 import SEOHelmet from '../utils/seoHelmet';
+import { getCategoryLabel } from '../utils/categoryLabels';
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -145,16 +146,16 @@ const ProductsPage = () => {
   return (
     <div className="min-h-screen bg-luxury-50 py-8">
       <SEOHelmet 
-        title={`${filters.category !== 'All' ? filters.category : 'All'} Necklaces | Panstellia`}
-        description={`Browse our ${filters.category !== 'All' ? filters.category.toLowerCase() : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`}
-        keywords={`${filters.category !== 'All' ? filters.category.toLowerCase() + ' necklaces' : 'necklaces'}, jewelry, luxury jewelry`}
+        title={`${filters.category !== 'All' ? getCategoryLabel(filters.category) : 'All'} Necklaces | Panstellia`}
+        description={`Browse our ${filters.category !== 'All' ? getCategoryLabel(filters.category).toLowerCase() : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`}
+        keywords={`${filters.category !== 'All' ? getCategoryLabel(filters.category).toLowerCase() + ' necklaces' : 'necklaces'}, jewelry, luxury jewelry`}
         canonical={`https://panstellia.com/products${filters.category !== 'All' ? `?category=${filters.category}` : ''}`}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-luxury-900">
-            {filters.category !== 'All' ? filters.category : 'All Products'}
+            {filters.category !== 'All' ? getCategoryLabel(filters.category) : 'All Products'}
           </h1>
           <p className="mt-2 text-luxury-600">
             {filteredProducts.length} products found
@@ -190,7 +191,7 @@ const ProductsPage = () => {
                         onChange={() => handleFilterChange('category', category)}
                         className="w-4 h-4 text-gold-600 border-luxury-300 focus:ring-gold-500"
                       />
-                      <span className="ml-2 text-sm text-luxury-600">{category}</span>
+                      <span className="ml-2 text-sm text-luxury-600">{getCategoryLabel(category)}</span>
                     </label>
                   ))}
                 </div>

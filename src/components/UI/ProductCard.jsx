@@ -5,7 +5,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { getProductImageUrls } from '../../utils/imageUtils';
-
+import { getCategoryLabel } from '../../utils/categoryLabels';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
@@ -125,7 +125,7 @@ const discount = product.originalPrice
         <Link to={`/product/${product.id}`} className="block p-4 hover:opacity-90 transition-opacity">
           {/* Category */}
           <p className="text-xs text-gold-600 font-medium uppercase tracking-wider">
-            {product.category}
+            {getCategoryLabel(product.category)}
           </p>
           
           {/* Name */}

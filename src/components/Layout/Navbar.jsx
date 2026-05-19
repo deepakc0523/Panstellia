@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useProducts } from '../../context/ProductContext';
+import { getCategoryLabel } from '../../utils/categoryLabels';
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -78,13 +79,13 @@ const Navbar = () => {
               Shop
             </Link>
             <Link to="/products?category=Gold" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              Gold
+              {getCategoryLabel('Gold')}
             </Link>
             <Link to="/products?category=Silver" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              Silver
+              {getCategoryLabel('Silver')}
             </Link>
             <Link to="/products?category=Lux Wear" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              Lux Wear
+              {getCategoryLabel('Lux Wear')}
             </Link>
           </div>
 
@@ -213,13 +214,13 @@ const Navbar = () => {
               Shop
             </Link>
             <Link to="/products?category=Gold" className="block text-luxury-700 hover:text-gold-600" onClick={() => setIsOpen(false)}>
-              Gold
+              {getCategoryLabel('Gold')}
             </Link>
             <Link to="/products?category=Silver" className="block text-luxury-700 hover:text-gold-600" onClick={() => setIsOpen(false)}>
-              Silver
+              {getCategoryLabel('Silver')}
             </Link>
             <Link to="/products?category=Lux Wear" className="block text-luxury-700 hover:text-gold-600" onClick={() => setIsOpen(false)}>
-              Lux Wear
+              {getCategoryLabel('Lux Wear')}
             </Link>
           </div>
         </div>

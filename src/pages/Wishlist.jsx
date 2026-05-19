@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
 import { getDirectImageUrl } from '../utils/imageUtils';
 import SEOHelmet from '../utils/seoHelmet';
+import { getCategoryLabel } from '../utils/categoryLabels';
 
 const WishlistPage = () => {
   const { wishlistItems, removeFromWishlist } = useWishlist();
@@ -79,7 +80,7 @@ const WishlistPage = () => {
                 </div>
               </Link>
               <div className="p-4">
-                <p className="text-xs text-gold-600 font-medium">{item.category}</p>
+                <p className="text-xs text-gold-600 font-medium">{getCategoryLabel(item.category)}</p>
                 <Link to={`/product/${item.id}`}>
                   <h3 className="mt-1 text-luxury-900 font-medium line-clamp-2 hover:text-gold-600">
                     {item.name}
