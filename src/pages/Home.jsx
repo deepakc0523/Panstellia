@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Star, Truck, Shield, RefreshCw } from 'lucide-react';
+import { Sparkles, ArrowRight, Star, Truck, Shield, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/UI/ProductCard';
 import SEOHelmet from '../utils/seoHelmet';
@@ -9,6 +10,20 @@ import { getCategoryLabel } from '../utils/categoryLabels';
 
 const HomePage = () => {
   const { getFeaturedProducts, products, loading } = useProducts();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const collectionImages = [
+    'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600',
+    'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600',
+    'https://images.unsplash.com/photo-1607979591413-07ec53e9e602?w=600'
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % collectionImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [collectionImages.length]);
 
   const categories = [
     {
@@ -257,12 +272,53 @@ const HomePage = () => {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </div>
-            <div className="hidden md:block">
-              <img 
-                src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=600" 
-                alt="Elite Series Collection"
-                className="rounded-xl shadow-2xl"
-              />
+            <div className="hidden md:flex items-center justify-center relative h-80">
+              <div className="relative w-full h-full overflow-hidden rounded-xl shadow-2xl">
+                {collectionImages.map((img, index) => (
+                  <motion.img
+                    key={index}
+                    src={img}
+                    alt={`Collection ${index + 1}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: index === currentImageIndex ? 1 : 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ))}
+                
+                {/* Navigation Buttons */}
+                <button
+                  onClick={() => setCurrentImageIndex((prev) => (prev - 1 + collectionImages.length) % collectionImages.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gold-600 p-2 rounded-full transition-all z-10 shadow-lg"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setCurrentImageIndex((prev) => (prev + 1) % collectionImages.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gold-600 p-2 rounded-full transition-all z-10 shadow-lg"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                
+                {/* Dot Indicators */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                  {collectionImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentImageIndex
+                          ? 'bg-white w-6'
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

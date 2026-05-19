@@ -271,6 +271,18 @@ const ProductDetailPage = () => {
               )}
             </div>
 
+            {/* Stock Status */}
+            <div className="mt-3 flex items-center gap-2">
+              {product.inStock ? (
+                <>
+                  <Check className="w-5 h-5 text-green-500" />
+                  <span className="text-green-600 font-medium">In Stock</span>
+                </>
+              ) : (
+                <span className="text-red-600 font-medium">Out of Stock</span>
+              )}
+            </div>
+
             {/* Description */}
             <p className="mt-6 text-luxury-600 leading-relaxed">
               {product.description}
@@ -379,11 +391,6 @@ const ProductDetailPage = () => {
               </dl>
             </div>
 
-            {/* Stock Status */}
-            <div className="mt-6 flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
-              <span className="text-green-600 font-medium">In Stock</span>
-            </div>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Star } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useState } from 'react';
@@ -162,6 +162,14 @@ const discount = product.originalPrice
                 ₹{product.originalPrice.toLocaleString()}
               </span>
             )}
+          </div>
+
+          {/* Stock Status */}
+          <div className="mt-2 flex items-center gap-2">
+            <Check className="w-4 h-4 text-green-500" />
+            <span className="text-sm text-green-600 font-medium">
+              {product.inStock ? 'In Stock' : 'Out of Stock'}
+            </span>
           </div>
         </Link>
       </div>
