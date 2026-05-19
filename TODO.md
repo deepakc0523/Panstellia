@@ -1,20 +1,12 @@
-# TODO
-
-- [x] Implement premium luxury gallery on `src/pages/ProductDetail.jsx`:
-
-  - [ ] Thumbnail strip (4–6), active gold glow
-  - [ ] Click-to-swap main image with fade/zoom (Framer Motion)
-  - [ ] Left/right overlay navigation arrows
-  - [ ] Hover zoom on main image
-  - [ ] Mobile swipe support
-  - [ ] Active indicator animation
-- [ ] Luxury UI/UX improvements in `src/pages/ProductDetail.jsx`:
-  - [x] Glassmorphism hover effects
-  - [x] Add to Cart shimmer hover
-  - [x] Micro-interactions for wishlist and quantity controls
-
-  - [x] Refine spacing/alignment for luxury feel
-- [x] Validate build/lint
-  - [x] Run `npm run build`
-
+- [ ] Add Admin Revenue tab/page (Products → Orders → Payments → Revenue)
+- [ ] Implement Revenue dashboard (cards + table w/ search, sort, pagination, badges)
+- [x] Created `src/pages/RevenueAdmin.jsx`
+- [x] Updated `src/pages/Admin.jsx` to include Payments and Revenue tabs
+- [x] Persist successful payments to Firestore `payments` collection in `src/pages/Checkout.jsx`
+- [x] Updated Firestore rules in `firestore.rules` for `payments`:
+  - Admins read all payments
+  - Users can create payment records for their own `userId`
+  - Non-admin updates/deletes blocked
+- [ ] Add loading skeletons/empty states/ toasts verification (already included in UI)
+- [ ] Validate Revenue calculations against stored payment schema
 

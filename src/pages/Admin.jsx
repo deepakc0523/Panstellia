@@ -1,23 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Package, Plus, Edit, Trash2, DollarSign, ShoppingBag, BarChart3 } from 'lucide-react';
+
 import { useAuth } from '../context/AuthContext';
 import { useProducts } from '../context/ProductContext';
 import { db } from '../services/firebase';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getDirectImageUrl } from '../utils/imageUtils';
+import RevenueAdmin from './RevenueAdmin';
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
-  
+
   const [activeTab, setActiveTab] = useState('products');
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  
   const [productForm, setProductForm] = useState({
     name: '',
     description: '',
@@ -28,17 +31,16 @@ const AdminPage = () => {
 
     category: 'Gold',
     featured: false,
-    inStock: true
+    inStock: true,
   });
 
   useEffect(() => {
-    if (!user || !isAdmin) {
-      navigate('/login');
-    }
+    if (!user || !isAdmin) navigate('/login');
   }, [user, isAdmin, navigate]);
 
   useEffect(() => {
     fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchOrders = async () => {
@@ -46,9 +48,9 @@ const AdminPage = () => {
       const ordersRef = collection(db, 'orders');
       const q = query(ordersRef, orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
-      const ordersData = querySnapshot.docs.map(doc => ({
+      const ordersData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       setOrders(ordersData);
     } catch (error) {
@@ -58,17 +60,17 @@ const AdminPage = () => {
           items: [{ name: 'Gold Pendant', price: 15999, quantity: 1 }],
           total: 16799,
           status: 'processing',
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ]);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setProductForm(prev => ({
+    setProductForm((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -80,7 +82,7 @@ const AdminPage = () => {
       const images = productForm.imagesText
         ? productForm.imagesText
             .split(',')
-            .map(s => s.trim())
+            .map((s) => s.trim())
             .filter(Boolean)
         : [];
 
@@ -88,11 +90,12 @@ const AdminPage = () => {
         ...productForm,
         images: images.length > 0 ? images : undefined,
         price: parseInt(productForm.price),
-        originalPrice: productForm.originalPrice ? parseInt(productForm.originalPrice) : null,
-        id: editingProduct?.id || `prod_${Date.now()}`
+        originalPrice: productForm.originalPrice
+          ? parseInt(productForm.originalPrice)
+          : null,
+        id: editingProduct?.id || `prod_${Date.now()}`,
       };
 
-      // Backward-compatible single image field
       if (!productData.images || productData.images.length === 0) {
         productData.image = productForm.image;
       }
@@ -111,15 +114,16 @@ const AdminPage = () => {
         price: '',
         originalPrice: '',
         image: '',
+        imagesText: '',
         category: 'Gold',
         featured: false,
-        inStock: true
+        inStock: true,
       });
     } catch (error) {
       console.error('Error saving product:', error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleEdit = (product) => {
@@ -131,44 +135,45 @@ const AdminPage = () => {
     setProductForm({
       name: product.name,
       description: product.description,
-      price: product.price.toString(),
+      price: product.price?.toString() || '',
       originalPrice: product.originalPrice?.toString() || '',
-      image: product.image,
+      image: product.image || '',
       imagesText,
-      category: product.category,
-      featured: product.featured,
-      inStock: product.inStock
+      category: product.category || 'Gold',
+      featured: product.featured || false,
+      inStock: product.inStock ?? true,
     });
+
     setShowProductForm(true);
   };
 
   const handleDelete = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await deleteProduct(productId);
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      await deleteProduct(productId);
+    } catch (error) {
+      console.error('Error deleting product:', error);
     }
   };
 
   const categories = ['Gold', 'Silver', 'Lux Wear', 'Party Wear'];
-  
+
   const stats = {
     totalProducts: products.length,
     totalOrders: orders.length,
     totalRevenue: orders.reduce((sum, order) => sum + (order.total || 0), 0),
-    pendingOrders: orders.filter(o => o.status === 'processing').length
+    pendingOrders: orders.filter((o) => o.status === 'processing').length,
   };
 
-  if (!user || !isAdmin) {
-    return null;
-  }
+  if (!user || !isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-luxury-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="font-serif text-3xl font-bold text-luxury-900 mb-8">Admin Panel</h1>
+        <h1 className="font-serif text-3xl font-bold text-luxury-900 mb-8">
+          Admin Panel
+        </h1>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -178,40 +183,51 @@ const AdminPage = () => {
                 <Package className="w-6 h-6 text-gold-600" />
               </div>
               <div className="ml-4">
-                <p className="text-2xl font-bold text-luxury-900">{stats.totalProducts}</p>
+                <p className="text-2xl font-bold text-luxury-900">
+                  {stats.totalProducts}
+                </p>
                 <p className="text-sm text-luxury-500">Products</p>
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-xl shadow-md p-6">
-      <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingBag className="w-6 h-6 text-blue-600" />
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <ShoppingBag className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-2xl font-bold text-luxury-900">{stats.totalOrders}</p>
+                <p className="text-2xl font-bold text-luxury-900">
+                  {stats.totalOrders}
+                </p>
                 <p className="text-sm text-luxury-500">Orders</p>
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-2xl font-bold text-luxury-900">₹{(stats.totalRevenue / 1000).toFixed(1)}k</p>
+                <p className="text-2xl font-bold text-luxury-900">
+                  ₹{(stats.totalRevenue / 1000).toFixed(1)}k
+                </p>
                 <p className="text-sm text-luxury-500">Revenue</p>
               </div>
             </div>
           </div>
+
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <BarChart3 className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-2xl font-bold text-luxury-900">{stats.pendingOrders}</p>
+                <p className="text-2xl font-bold text-luxury-900">
+                  {stats.pendingOrders}
+                </p>
                 <p className="text-sm text-luxury-500">Pending</p>
               </div>
             </div>
@@ -242,6 +258,26 @@ const AdminPage = () => {
               >
                 Orders
               </button>
+              <button
+                onClick={() => setActiveTab('payments')}
+                className={`py-4 border-b-2 font-medium ${
+                  activeTab === 'payments'
+                    ? 'border-gold-500 text-gold-600'
+                    : 'border-transparent text-luxury-500 hover:text-luxury-700'
+                }`}
+              >
+                Payments
+              </button>
+              <button
+                onClick={() => setActiveTab('revenue')}
+                className={`py-4 border-b-2 font-medium ${
+                  activeTab === 'revenue'
+                    ? 'border-gold-500 text-gold-600'
+                    : 'border-transparent text-luxury-500 hover:text-luxury-700'
+                }`}
+              >
+                Revenue
+              </button>
             </nav>
           </div>
 
@@ -249,7 +285,9 @@ const AdminPage = () => {
             {activeTab === 'products' && (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-semibold text-luxury-900">Manage Products</h2>
+                  <h2 className="font-semibold text-luxury-900">
+                    Manage Products
+                  </h2>
                   <button
                     onClick={() => {
                       setShowProductForm(true);
@@ -260,9 +298,10 @@ const AdminPage = () => {
                         price: '',
                         originalPrice: '',
                         image: '',
+                        imagesText: '',
                         category: 'Gold',
                         featured: false,
-                        inStock: true
+                        inStock: true,
                       });
                     }}
                     className="btn-primary flex items-center"
@@ -272,7 +311,6 @@ const AdminPage = () => {
                   </button>
                 </div>
 
-                {/* Product Form Modal */}
                 {showProductForm && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -281,7 +319,9 @@ const AdminPage = () => {
                       </h3>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium mb-1">Name</label>
+                          <label className="block text-sm font-medium mb-1">
+                            Name
+                          </label>
                           <input
                             type="text"
                             name="name"
@@ -292,7 +332,9 @@ const AdminPage = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1">Description</label>
+                          <label className="block text-sm font-medium mb-1">
+                            Description
+                          </label>
                           <textarea
                             name="description"
                             value={productForm.description}
@@ -302,9 +344,12 @@ const AdminPage = () => {
                             className="input-field"
                           />
                         </div>
+
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium mb-1">Price</label>
+                            <label className="block text-sm font-medium mb-1">
+                              Price
+                            </label>
                             <input
                               type="number"
                               name="price"
@@ -315,7 +360,9 @@ const AdminPage = () => {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium mb-1">Original Price</label>
+                            <label className="block text-sm font-medium mb-1">
+                              Original Price
+                            </label>
                             <input
                               type="number"
                               name="originalPrice"
@@ -325,8 +372,11 @@ const AdminPage = () => {
                             />
                           </div>
                         </div>
+
                         <div>
-                          <label className="block text-sm font-medium mb-1">Image URL</label>
+                          <label className="block text-sm font-medium mb-1">
+                            Image URL
+                          </label>
                           <input
                             type="url"
                             name="image"
@@ -339,7 +389,9 @@ const AdminPage = () => {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium mb-1">Multiple Images (comma separated)</label>
+                          <label className="block text-sm font-medium mb-1">
+                            Multiple Images (comma separated)
+                          </label>
                           <input
                             type="text"
                             name="imagesText"
@@ -348,23 +400,26 @@ const AdminPage = () => {
                             placeholder="https://... , https://..."
                             className="input-field"
                           />
-                          <p className="text-xs text-luxury-500 mt-1">
-                            Optional. Used to create <code>product.images</code> (array). If empty, your single <code>image</code> is used as fallback.
-                          </p>
                         </div>
+
                         <div>
-                          <label className="block text-sm font-medium mb-1">Category</label>
+                          <label className="block text-sm font-medium mb-1">
+                            Category
+                          </label>
                           <select
                             name="category"
                             value={productForm.category}
                             onChange={handleInputChange}
                             className="input-field"
                           >
-                            {categories.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
+                            {categories.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
                             ))}
                           </select>
                         </div>
+
                         <div className="flex items-center gap-4">
                           <label className="flex items-center">
                             <input
@@ -387,6 +442,7 @@ const AdminPage = () => {
                             In Stock
                           </label>
                         </div>
+
                         <div className="flex gap-4">
                           <button
                             type="submit"
@@ -411,20 +467,29 @@ const AdminPage = () => {
                   </div>
                 )}
 
-                {/* Products Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-luxury-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">Image</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">Category</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">Price</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">Actions</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">
+                          Image
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">
+                          Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">
+                          Category
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">
+                          Price
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-luxury-700">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
-<tbody className="divide-y divide-luxury-200">
-                      {products.map(product => (
+                    <tbody className="divide-y divide-luxury-200">
+                      {products.map((product) => (
                         <tr key={product.id}>
                           <td className="px-4 py-3">
                             <img
@@ -432,13 +497,18 @@ const AdminPage = () => {
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded"
                               onError={(e) => {
-                                e.target.src = 'https://via.placeholder.com/48?text=No+Image';
+                                e.target.src =
+                                  'https://via.placeholder.com/48?text=No+Image';
                               }}
                             />
                           </td>
-                          <td className="px-4 py-3 text-luxury-900">{product.name}</td>
+                          <td className="px-4 py-3 text-luxury-900">
+                            {product.name}
+                          </td>
                           <td className="px-4 py-3">
-                            <span className="badge badge-gold">{product.category}</span>
+                            <span className="badge badge-gold">
+                              {product.category}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-luxury-900">
                             ₹{product.price?.toLocaleString()}
@@ -469,32 +539,224 @@ const AdminPage = () => {
 
             {activeTab === 'orders' && (
               <div>
-                <h2 className="font-semibold text-luxury-900 mb-4">All Orders</h2>
+                <h2 className="font-semibold text-luxury-900 mb-4">
+                  All Orders
+                </h2>
                 <div className="space-y-4">
-                  {orders.map(order => (
-                    <div key={order.id} className="border border-luxury-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-luxury-900">
-                            Order #{order.id?.slice(0, 8).toUpperCase()}
-                          </p>
-                          <p className="text-sm text-luxury-500">
-                            {order.items?.length} items - ₹{order.total?.toLocaleString()}
-                          </p>
+                  {orders.map((order) => {
+                    const customerNameRaw =
+                      order.customerName || order.name || order.fullName || '';
+                    const customerName =
+                      typeof customerNameRaw === 'object'
+                        ? customerNameRaw.fullName ||
+                          customerNameRaw.name ||
+                          ''
+                        : customerNameRaw;
+
+                    const customerPhoneRaw =
+                      order.customerPhone ||
+                      order.phone ||
+                      order.contact ||
+                      order.mobile ||
+                      '';
+                    const customerPhone =
+                      typeof customerPhoneRaw === 'object'
+                        ? customerPhoneRaw.mobile ||
+                          customerPhoneRaw.phone ||
+                          ''
+                        : customerPhoneRaw;
+
+                    const customerAddressRaw =
+                      order.address ||
+                      order.shippingAddress ||
+                      order.customerAddress ||
+                      '';
+                    const customerAddress =
+                      typeof customerAddressRaw === 'object'
+                        ? [
+                            customerAddressRaw.addressLine1,
+                            customerAddressRaw.addressLine2,
+                            customerAddressRaw.city,
+                            customerAddressRaw.state,
+                          ]
+                            .filter(Boolean)
+                            .join(', ')
+                        : customerAddressRaw;
+
+                    const customerPincodeRaw =
+                      order.pincode || order.zip || order.postalCode || '';
+                    const customerPincode =
+                      typeof customerPincodeRaw === 'object'
+                        ? customerPincodeRaw.pincode || ''
+                        : customerPincodeRaw;
+
+                    const canCancel =
+                      order.status !== 'delivered' &&
+                      order.status !== 'cancelled';
+
+                    const handleCancelOrder = async () => {
+                      if (!canCancel) return;
+                      if (
+                        !window.confirm(
+                          `Cancel order ${order.id?.slice(0, 8).toUpperCase()}?`
+                        )
+                      ) {
+                        return;
+                      }
+
+                      try {
+                        const orderDocRef = doc(db, 'orders', order.id);
+                        await updateDoc(orderDocRef, {
+                          status: 'cancelled',
+                        });
+
+                        setOrders((prev) =>
+                          prev.map((o) =>
+                            o.id === order.id
+                              ? { ...o, status: 'cancelled' }
+                              : o
+                          )
+                        );
+                      } catch (e) {
+                        console.error('Error cancelling order:', e);
+                      }
+                    };
+
+                    const handleDeleteOrder = async () => {
+                      if (
+                        !window.confirm(
+                          `Delete order ${order.id?.slice(0, 8).toUpperCase()}? This cannot be undone.`
+                        )
+                      ) {
+                        return;
+                      }
+
+                      try {
+                        const orderDocRef = doc(db, 'orders', order.id);
+                        await deleteDoc(orderDocRef);
+                        setOrders((prev) => prev.filter((o) => o.id !== order.id));
+                      } catch (e) {
+                        console.error('Error deleting order:', e);
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={order.id}
+                        className="border border-luxury-200 rounded-lg p-4"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <p className="font-medium text-luxury-900">
+                              Order #{order.id?.slice(0, 8).toUpperCase()}
+                            </p>
+                            <p className="text-sm text-luxury-500">
+                              {order.items?.length} items - ₹
+                              {order.total?.toLocaleString()}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-2">
+                            <span
+                              className={`badge ${
+                                order.status === 'delivered'
+                                  ? 'badge-success'
+                                  : order.status === 'cancelled'
+                                    ? 'badge-error'
+                                    : 'badge-warning'
+                              }`}
+                            >
+                              {order.status}
+                            </span>
+
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={handleCancelOrder}
+                                disabled={!canCancel}
+                                className={`px-3 py-1 rounded-lg text-sm border ${
+                                  canCancel
+                                    ? 'border-luxury-200 text-luxury-700 hover:bg-luxury-50'
+                                    : 'border-luxury-200 text-luxury-400 cursor-not-allowed'
+                                }`}
+                              >
+                                Cancel
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleDeleteOrder}
+                                className="px-3 py-1 rounded-lg text-sm border border-red-200 text-red-700 hover:bg-red-50"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <span className={`badge ${
-                          order.status === 'delivered' ? 'badge-success' :
-                          order.status === 'cancelled' ? 'badge-error' :
-                          'badge-warning'
-                        }`}>
-                          {order.status}
-                        </span>
+
+                        <div className="mt-4 pt-4 border-t border-luxury-200">
+                          <h3 className="font-semibold text-luxury-900 mb-2">
+                            Customer Details
+                          </h3>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <p className="text-luxury-600">Name</p>
+                              <p className="text-luxury-900 font-medium">
+                                {customerName || '—'}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-luxury-600">Mob No</p>
+                              <p className="text-luxury-900 font-medium">
+                                {customerPhone || '—'}
+                              </p>
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <p className="text-luxury-600">Address</p>
+                              <p className="text-luxury-900 font-medium">
+                                {customerAddress || '—'}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-luxury-600">Pincode</p>
+                              <p className="text-luxury-900 font-medium">
+                                {customerPincode || '—'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
+
+            {activeTab === 'payments' && (
+              <div>
+                <h2 className="font-semibold text-luxury-900 mb-4">
+                  Payments
+                </h2>
+                <div className="bg-luxury-50 border border-luxury-200 rounded-xl p-6 text-luxury-600">
+                  Payments list is available inside the Revenue dashboard.
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('revenue')}
+                      className="btn-primary"
+                    >
+                      Go to Revenue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'revenue' && <RevenueAdmin />}
           </div>
         </div>
       </div>
@@ -503,3 +765,4 @@ const AdminPage = () => {
 };
 
 export default AdminPage;
+

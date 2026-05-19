@@ -53,13 +53,17 @@ service cloud.firestore {
     // Razorpay payments persisted by Firebase Functions.
     // Users generally should not write to this collection.
     match /payments/{paymentId} {
-      allow read: if request.auth != null &&
-        // Allow admins to read.
-        (isAdmin() || isAdminEmail());
+      // Admins can read all payments.
+      allow read: if request.auth != null && (isAdmin() || isAdminEmail());
 
-      // Writes are server-only. Enforce by denying all client writes.
-      allow create, update, delete: if false;
+      // Users can create their own payment record.
+      // (Writes are client-side but limited to the authenticated user's own userId.)
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Block non-admin updates/deletes.
+      allow update, delete: if false;
     }
+
 
 
     match /{document=**} {

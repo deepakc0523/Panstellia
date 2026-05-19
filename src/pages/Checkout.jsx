@@ -5,8 +5,13 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { createRazorpayOrder, verifyPayment, openCheckout } from '../services/payment';
+import { db } from '../services/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+
 import { getDirectImageUrl } from '../utils/imageUtils';
 import SEOHelmet from '../utils/seoHelmet';
+
+
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -106,6 +111,36 @@ const CheckoutPage = () => {
               toast.success('Payment successful!', {
                 position: 'bottom-right'
               });
+
+              // Persist payment record in Firestore (Spark-plan compatible)
+              try {
+                const paymentMethod = 'razorpay';
+                const orderId = response.razorpay_payment_id;
+                const phone = formData.phone;
+
+                await addDoc(collection(db, 'payments'), {
+                  orderId,
+                  customerName: formData.name,
+                  phone,
+                  amount: total * 100, // keep paise
+                  paymentMethod,
+                  paymentStatus: 'Paid',
+                  createdAt: serverTimestamp(),
+                  items: cartItems.map((ci) => ({
+                    name: ci.name,
+                    price: ci.price,
+                    quantity: ci.quantity,
+                    image: ci.image,
+                  })),
+                  userId: user.uid,
+                });
+
+              } catch (e) {
+                console.error('Failed to store payment in Firestore:', e);
+                toast.error('Payment succeeded, but saving payment record failed.', {
+                  position: 'bottom-right',
+                });
+              }
               
               // Clear cart
               await clearCart();
@@ -119,6 +154,7 @@ const CheckoutPage = () => {
                 }
               });
             } else {
+
               throw new Error('Payment verification failed');
             }
           } catch (error) {
