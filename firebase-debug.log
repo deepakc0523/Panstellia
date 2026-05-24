@@ -1,0 +1,37 @@
+[debug] [2026-05-24T14:23:25.339Z] ----------------------------------------------------------------------
+[debug] [2026-05-24T14:23:25.343Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\thang\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js functions:list
+[debug] [2026-05-24T14:23:25.343Z] CLI Version:   15.16.0
+[debug] [2026-05-24T14:23:25.343Z] Platform:      win32
+[debug] [2026-05-24T14:23:25.344Z] Node Version:  v22.17.0
+[debug] [2026-05-24T14:23:25.344Z] Time:          Sun May 24 2026 19:53:25 GMT+0530 (India Standard Time)
+[debug] [2026-05-24T14:23:25.344Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-24T14:23:25.687Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-24T14:23:25.689Z] > authorizing via signed-in user (thangaduraipazhani@gmail.com)
+[debug] [2026-05-24T14:23:25.689Z] [iam] checking project panstellia-65653 for permissions ["cloudfunctions.functions.list","firebase.projects.get","run.services.list"]
+[debug] [2026-05-24T14:23:25.692Z] Checked if tokens are valid: false, expires at: 1779609921133
+[debug] [2026-05-24T14:23:25.692Z] Checked if tokens are valid: false, expires at: 1779609921133
+[debug] [2026-05-24T14:23:25.692Z] > refreshing access token with scopes: []
+[debug] [2026-05-24T14:23:25.695Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-24T14:23:25.696Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-24T14:23:26.270Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-24T14:23:26.271Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-24T14:23:26.288Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/panstellia-65653:testIamPermissions [none]
+[debug] [2026-05-24T14:23:26.288Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/panstellia-65653:testIamPermissions  x-goog-user-project=panstellia-65653
+[debug] [2026-05-24T14:23:26.289Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/panstellia-65653:testIamPermissions {"permissions":["cloudfunctions.functions.list","firebase.projects.get","run.services.list"]}
+[debug] [2026-05-24T14:23:28.953Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/panstellia-65653:testIamPermissions 403
+[debug] [2026-05-24T14:23:28.953Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/panstellia-65653:testIamPermissions {"error":{"code":403,"message":"Caller does not have required permission to use project panstellia-65653. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=panstellia-65653 and then retry. Propagation of the new permission may take a few minutes.","status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"USER_PROJECT_DENIED","domain":"googleapis.com","metadata":{"service":"cloudresourcemanager.googleapis.com","consumer":"projects/panstellia-65653","consoleUrl":"https://console.developers.google.com/iam-admin/iam?project=panstellia-65653","containerInfo":"panstellia-65653"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Caller does not have required permission to use project panstellia-65653. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=panstellia-65653 and then retry. Propagation of the new permission may take a few minutes."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developer console IAM admin","url":"https://console.developers.google.com/iam-admin/iam?project=panstellia-65653"}]}]}}
+[debug] [2026-05-24T14:23:28.955Z] [iam] error while checking permissions, command may fail: Request to https://cloudresourcemanager.googleapis.com/v1/projects/panstellia-65653:testIamPermissions had HTTP Error: 403, Caller does not have required permission to use project panstellia-65653. Grant the caller the roles/serviceusage.serviceUsageConsumer role, or a custom role with the serviceusage.services.use permission, by visiting https://console.developers.google.com/iam-admin/iam?project=panstellia-65653 and then retry. Propagation of the new permission may take a few minutes.
+[debug] [2026-05-24T14:23:28.957Z] Checked if tokens are valid: true, expires at: 1779636205272
+[debug] [2026-05-24T14:23:28.958Z] Checked if tokens are valid: true, expires at: 1779636205272
+[debug] [2026-05-24T14:23:28.958Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/panstellia-65653/locations/-/functions [none]
+[debug] [2026-05-24T14:23:29.748Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/panstellia-65653/locations/-/functions 403
+[debug] [2026-05-24T14:23:29.748Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/panstellia-65653/locations/-/functions {"error":{"code":403,"message":"Permission 'cloudfunctions.functions.list' denied on resource 'projects/panstellia-65653/locations/-' (or resource may not exist).","status":"PERMISSION_DENIED"}}
+[debug] [2026-05-24T14:23:29.749Z] [functions] failed to list functions for panstellia-65653
+[debug] [2026-05-24T14:23:29.749Z] [functions] Request to https://cloudfunctions.googleapis.com/v1/projects/panstellia-65653/locations/-/functions had HTTP Error: 403, Permission 'cloudfunctions.functions.list' denied on resource 'projects/panstellia-65653/locations/-' (or resource may not exist).
+[debug] [2026-05-24T14:23:30.179Z] FirebaseError: Request to https://cloudfunctions.googleapis.com/v1/projects/panstellia-65653/locations/-/functions had HTTP Error: 403, Permission 'cloudfunctions.functions.list' denied on resource 'projects/panstellia-65653/locations/-' (or resource may not exist).
+    at responseToError (C:\Users\thang\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\thang\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:333:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[error] 
+[error] Error: Failed to list functions for panstellia-65653

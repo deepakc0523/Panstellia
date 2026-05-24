@@ -11,7 +11,8 @@ export const SEOHelmet = ({
   canonical,
   ogImage = '/og-image.jpg',
   ogType = 'website',
-  structuredData = null
+  structuredData = null,
+  preloadImages = []
 }) => {
   return (
     <Helmet>
@@ -24,6 +25,14 @@ export const SEOHelmet = ({
       
       {/* Canonical URL */}
       {canonical && <link rel="canonical" href={canonical} />}
+
+      {/* Image performance hints */}
+      <link rel="preconnect" href="https://i.ibb.co" crossOrigin="" />
+      <link rel="preconnect" href="https://drive.google.com" crossOrigin="" />
+      <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="" />
+      {preloadImages.filter(Boolean).map((image) => (
+        <link key={image} rel="preload" as="image" href={image} />
+      ))}
       
       {/* Open Graph Meta Tags */}
       <meta property="og:title" content={title} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Heart, User, Menu, X, Search, LogOut } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ShoppingBag, Heart, User, Menu, X, Search, LogOut, Home, Store, Gem, CircleDot, Crown, Sparkles, Diamond } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -13,6 +13,7 @@ const Navbar = () => {
   const { wishlistItems } = useWishlist();
   const { searchProducts } = useProducts();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [isOpen, setIsOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -57,6 +58,16 @@ const Navbar = () => {
   };
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const currentCategory = new URLSearchParams(location.search).get('category');
+  const navItems = [
+    { to: '/', label: 'Home', icon: Home, isActive: location.pathname === '/' },
+    { to: '/products', label: 'Shop', icon: Store, isActive: location.pathname === '/products' && !currentCategory },
+    { to: '/products?category=Gold', label: getCategoryLabel('Gold'), icon: Gem, isActive: location.pathname === '/products' && currentCategory === 'Gold' },
+    { to: '/products?category=Silver', label: getCategoryLabel('Silver'), icon: CircleDot, isActive: location.pathname === '/products' && currentCategory === 'Silver' },
+    { to: '/products?category=Lux Wear', label: getCategoryLabel('Lux Wear'), icon: Crown, isActive: location.pathname === '/products' && currentCategory === 'Lux Wear' },
+    { to: '/category/elegant-spark', label: getCategoryLabel('Elegant Spark'), icon: Sparkles, isActive: location.pathname === '/category/elegant-spark' },
+    { to: '/products?category=Piercings', label: getCategoryLabel('Piercings'), icon: Diamond, isActive: location.pathname === '/products' && currentCategory === 'Piercings' }
+  ];
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -71,28 +82,20 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              Home
-            </Link>
-            <Link to="/products" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              Shop
-            </Link>
-            <Link to="/products?category=Gold" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              {getCategoryLabel('Gold')}
-            </Link>
-            <Link to="/products?category=Silver" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              {getCategoryLabel('Silver')}
-            </Link>
-            <Link to="/products?category=Lux Wear" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              {getCategoryLabel('Lux Wear')}
-            </Link>
-            <Link to="/category/elegant-spark" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              {getCategoryLabel('Elegant Spark')}
-            </Link>
-            <Link to="/products?category=Piercings" className="text-luxury-700 hover:text-gold-600 transition-colors">
-              {getCategoryLabel('Piercings')}
-            </Link>
+          <div className="hidden md:flex items-center space-x-3">
+            {navItems.map(({ to, label, icon: Icon, isActive }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`nav-glow-link ${isActive ? 'nav-glow-link--active' : ''}`}
+                aria-label={label}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <Icon className="relative z-10 w-5 h-5" />
+                {isActive && <span className="nav-active-label">{label}</span>}
+                {!isActive && <span className="nav-tooltip">{label}</span>}
+              </Link>
+            ))}
           </div>
 
           {/* Search & Icons */}

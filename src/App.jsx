@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,30 +14,35 @@ import Layout from './components/Layout/Layout';
 import ScrollToTopOnNavigation from './components/ScrollToTopOnNavigation';
 
 
-// Pages
-import HomePage from './pages/Home';
-import ProductsPage from './pages/Products';
-import ProductDetailPage from './pages/ProductDetail';
-import LoginPage from './pages/Login';
-import SignupPage from './pages/Signup';
-import CartPage from './pages/Cart';
-import CheckoutPage from './pages/Checkout';
-import WishlistPage from './pages/Wishlist';
-import OrdersPage from './pages/Orders';
-import OrderSuccessPage from './pages/OrderSuccess';
-import OrderDetailsPage from './pages/OrderDetails';
-
-import ForgotPasswordPage from './pages/ForgotPassword';
-import AdminPage from './pages/Admin';
-import AboutUsPage from './pages/AboutUs';
-import PrivacyPolicyPage from './pages/PrivacyPolicy';
-import TermsConditionsPage from './pages/TermsConditions';
-import ShippingPolicyPage from './pages/ShippingPolicy';
-import ElegantSparkPage from './pages/ElegantSpark';
+// Pages are split by route so the first visit only downloads the active page.
+const HomePage = lazy(() => import('./pages/Home'));
+const ProductsPage = lazy(() => import('./pages/Products'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetail'));
+const LoginPage = lazy(() => import('./pages/Login'));
+const SignupPage = lazy(() => import('./pages/Signup'));
+const CartPage = lazy(() => import('./pages/Cart'));
+const CheckoutPage = lazy(() => import('./pages/Checkout'));
+const WishlistPage = lazy(() => import('./pages/Wishlist'));
+const OrdersPage = lazy(() => import('./pages/Orders'));
+const OrderSuccessPage = lazy(() => import('./pages/OrderSuccess'));
+const OrderDetailsPage = lazy(() => import('./pages/OrderDetails'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPassword'));
+const AdminPage = lazy(() => import('./pages/Admin'));
+const AboutUsPage = lazy(() => import('./pages/AboutUs'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsConditionsPage = lazy(() => import('./pages/TermsConditions'));
+const ShippingPolicyPage = lazy(() => import('./pages/ShippingPolicy'));
+const ElegantSparkPage = lazy(() => import('./pages/ElegantSpark'));
 
 
 
 import { useAuth } from './context/AuthContext';
+
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="w-12 h-12 border-4 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -87,74 +93,76 @@ function App() {
             <ProductProvider>
               <CartProvider>
                 <WishlistProvider>
-                <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="products" element={<ProductsPage />} />
-                  <Route path="category/elegant-spark" element={<ElegantSparkPage />} />
-                  <Route path="product/:id" element={<ProductDetailPage />} />
-                  <Route path="login" element={<LoginPage />} />
-                  <Route path="signup" element={<SignupPage />} />
-                  <Route path="forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="cart" element={<CartPage />} />
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<HomePage />} />
+                    <Route path="products" element={<ProductsPage />} />
+                    <Route path="category/elegant-spark" element={<ElegantSparkPage />} />
+                    <Route path="product/:id" element={<ProductDetailPage />} />
+                    <Route path="login" element={<LoginPage />} />
+                    <Route path="signup" element={<SignupPage />} />
+                    <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="cart" element={<CartPage />} />
 
-                  <Route path="wishlist" element={<WishlistPage />} />
-                  <Route path="about-us" element={<AboutUsPage />} />
-                  <Route path="privacy" element={<PrivacyPolicyPage />} />
-                  <Route path="terms" element={<TermsConditionsPage />} />
-                  <Route path="shipping" element={<ShippingPolicyPage />} />
+                    <Route path="wishlist" element={<WishlistPage />} />
+                    <Route path="about-us" element={<AboutUsPage />} />
+                    <Route path="privacy" element={<PrivacyPolicyPage />} />
+                    <Route path="terms" element={<TermsConditionsPage />} />
+                    <Route path="shipping" element={<ShippingPolicyPage />} />
+                    
+                    {/* Protected Routes */}
+                    <Route 
+                      path="checkout" 
+                      element={
+                        <ProtectedRoute>
+                          <CheckoutPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+
+                    <Route 
+                      path="orders" 
+                      element={
+                        <ProtectedRoute>
+                          <OrdersPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="order/:id"
+                      element={
+                        <ProtectedRoute>
+                          <OrderDetailsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route 
+                      path="order-success"
+                      element={
+                        <ProtectedRoute>
+                          <OrderSuccessPage />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    
+                    {/* Admin Routes */}
+                    <Route 
+                      path="admin" 
+                      element={
+                        <AdminRoute>
+                          <AdminPage />
+                        </AdminRoute>
+                      } 
+                    />
+                  </Route>
                   
-                  {/* Protected Routes */}
-                  <Route 
-                    path="checkout" 
-                    element={
-                      <ProtectedRoute>
-                        <CheckoutPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-
-                  <Route 
-                    path="orders" 
-                    element={
-                      <ProtectedRoute>
-                        <OrdersPage />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="order/:id"
-                    element={
-                      <ProtectedRoute>
-                        <OrderDetailsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route 
-                    path="order-success"
-                    element={
-                      <ProtectedRoute>
-                        <OrderSuccessPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  
-                  {/* Admin Routes */}
-                  <Route 
-                    path="admin" 
-                    element={
-                      <AdminRoute>
-                        <AdminPage />
-                      </AdminRoute>
-                    } 
-                  />
-                </Route>
-                
-                {/* Catch all - redirect to home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* Catch all - redirect to home */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
             </WishlistProvider>
           </CartProvider>
         </ProductProvider>

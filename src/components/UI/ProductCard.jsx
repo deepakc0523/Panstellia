@@ -2,15 +2,17 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Star, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getProductImageUrls } from '../../utils/imageUtils';
 import { getCategoryLabel } from '../../utils/categoryLabels';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, priority = false }) => {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [isAdding, setIsAdding] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   const wishlisted = isInWishlist(product.id);
 
@@ -47,8 +49,32 @@ const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const imageUrls = getProductImageUrls(product);
-  const imageUrl = imageUrls[0] || '';
+  const imageUrls = useMemo(() => getProductImageUrls(product), [product]);
+  const imageUrl = imageUrls[activeImageIndex] || imageUrls[0] || '';
+
+  useEffect(() => {
+    if (!isHovered || imageUrls.length <= 1) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveImageIndex((current) => (current + 1) % imageUrls.length);
+    }, 900);
+
+    return () => window.clearInterval(timer);
+  }, [isHovered, imageUrls.length]);
+
+  useEffect(() => {
+    if (!isHovered || imageUrls.length <= 1) return;
+
+    const nextImage = new Image();
+    nextImage.decoding = 'async';
+    nextImage.src = imageUrls[(activeImageIndex + 1) % imageUrls.length];
+  }, [activeImageIndex, imageUrls, isHovered]);
+
+  useEffect(() => {
+    if (activeImageIndex >= imageUrls.length) {
+      setActiveImageIndex(0);
+    }
+  }, [activeImageIndex, imageUrls.length]);
 
 
   const productStatus = product.productStatus || 'available';
@@ -68,7 +94,14 @@ const discount = product.originalPrice
   );
 
   return (
-    <div className="block cursor-pointer">
+    <div
+      className="block cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setActiveImageIndex(0);
+      }}
+    >
       <div className="card relative overflow-hidden group transition-transform hover:-translate-y-1">
 
 
@@ -76,10 +109,27 @@ const discount = product.originalPrice
         <Link to={`/product/${product.id}`} className="block relative overflow-hidden aspect-[4/5]">
           {statusBadge}
           <img
+            key={imageUrl}
             src={imageUrl}
             alt={product.name}
-            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchPriority={priority ? 'high' : 'auto'}
+            className="w-full h-full object-cover transform group-hover:scale-110 transition-all duration-500"
           />
+
+          {imageUrls.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/25 px-2 py-1 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+              {imageUrls.map((_, index) => (
+                <span
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    activeImageIndex === index ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
           
           {/* Discount Badge */}
 

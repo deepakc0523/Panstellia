@@ -1,11 +1,33 @@
 // Razorpay Payment Service (Frontend)
 // Calls Firebase Functions REST endpoints securely.
 
+import firebaseApp from './firebase';
+
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
+const FIREBASE_PROJECT_ID =
+  import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseApp?.options?.projectId;
+const FIREBASE_FUNCTIONS_REGION =
+  import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || 'us-central1';
+const LOCAL_PAYMENT_SERVER_URL =
+  import.meta.env.VITE_LOCAL_PAYMENT_SERVER_URL || 'http://localhost:8080';
+
+const getDefaultFunctionUrl = (functionName) => {
+  if (!FIREBASE_PROJECT_ID) return '';
+  return `https://${FIREBASE_FUNCTIONS_REGION}-${FIREBASE_PROJECT_ID}.cloudfunctions.net/${functionName}`;
+};
+
 // These are REST endpoint URLs (NO secrets).
-const CREATE_ORDER_URL = import.meta.env.VITE_FIREBASE_CREATE_ORDER_URL;
-const VERIFY_PAYMENT_URL = import.meta.env.VITE_FIREBASE_VERIFY_PAYMENT_URL;
+const CREATE_ORDER_URL =
+  import.meta.env.VITE_FIREBASE_CREATE_ORDER_URL ||
+  (import.meta.env.DEV
+    ? `${LOCAL_PAYMENT_SERVER_URL}/create-order`
+    : getDefaultFunctionUrl('createOrder'));
+const VERIFY_PAYMENT_URL =
+  import.meta.env.VITE_FIREBASE_VERIFY_PAYMENT_URL ||
+  (import.meta.env.DEV
+    ? `${LOCAL_PAYMENT_SERVER_URL}/verify-payment`
+    : getDefaultFunctionUrl('verifyPayment'));
 
 
 
@@ -85,7 +107,7 @@ export const createRazorpayOrder = async (amountPaise, currency = 'INR', options
 
   if (!response.ok) {
     const err = await parseErrorResponse(response);
-    throw new Error(err || 'Failed to create payment order');
+    throw new Error(err || `Failed to create payment order (${response.status})`);
   }
 
   const data = await response.json();

@@ -16,12 +16,17 @@ const ProductsPage = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const searchQuery = searchParams.get('search') || '';
+  const categoryQuery = searchParams.get('category') || '';
+  const minPriceQuery = searchParams.get('minPrice') || '';
+  const maxPriceQuery = searchParams.get('maxPrice') || '';
+  const sortByQuery = searchParams.get('sortBy') || 'newest';
   
   const [filters, setFilters] = useState({
-    category: searchParams.get('category') || 'All',
-    minPrice: '',
-    maxPrice: '',
-    sortBy: 'newest'
+    category: categoryQuery || 'All',
+    minPrice: minPriceQuery,
+    maxPrice: maxPriceQuery,
+    sortBy: sortByQuery
   });
 
   const categories = ['All', 'Gold', 'Silver', 'Lux Wear', 'Party Wear', 'Elegant Spark'];
@@ -32,8 +37,27 @@ const ProductsPage = () => {
     { value: 'rating', label: 'Rating' }
   ];
 
-  const searchQuery = searchParams.get('search') || '';
-  const categoryQuery = searchParams.get('category') || '';
+  useEffect(() => {
+    setFilters((current) => {
+      const next = {
+        category: categoryQuery || 'All',
+        minPrice: minPriceQuery,
+        maxPrice: maxPriceQuery,
+        sortBy: sortByQuery
+      };
+
+      if (
+        current.category === next.category &&
+        current.minPrice === next.minPrice &&
+        current.maxPrice === next.maxPrice &&
+        current.sortBy === next.sortBy
+      ) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [categoryQuery, minPriceQuery, maxPriceQuery, sortByQuery]);
 
   useEffect(() => {
     const search = searchQuery;
@@ -323,8 +347,8 @@ const ProductsPage = () => {
                   ? 'grid-cols-2 md:grid-cols-3' 
                   : 'grid-cols-1'
               }`}>
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                {filteredProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} priority={index < 6} />
                 ))}
               </div>
             )}

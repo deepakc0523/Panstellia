@@ -155,7 +155,6 @@ const CheckoutPage = () => {
 
       // Step 2: Open Razorpay checkout with order_id
       const razorpayOptions = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SkY8Bdi8iAl2go',
         amount: amountInPaise,
         currency: 'INR',
         name: 'Panstellia',
