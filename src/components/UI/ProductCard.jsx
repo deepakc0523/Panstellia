@@ -2,15 +2,17 @@ import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Star, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getProductImageUrls } from '../../utils/imageUtils';
 import { getCategoryLabel } from '../../utils/categoryLabels';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, priority = false }) => {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [isAdding, setIsAdding] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   const wishlisted = isInWishlist(product.id);
 
@@ -47,8 +49,32 @@ const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
-  const imageUrls = getProductImageUrls(product);
-  const imageUrl = imageUrls[0] || '';
+  const imageUrls = useMemo(() => getProductImageUrls(product), [product]);
+  const imageUrl = imageUrls[activeImageIndex] || imageUrls[0] || '';
+
+  useEffect(() => {
+    if (!isHovered || imageUrls.length <= 1) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveImageIndex((current) => (current + 1) % imageUrls.length);
+    }, 900);
+
+    return () => window.clearInterval(timer);
+  }, [isHovered, imageUrls.length]);
+
+  useEffect(() => {
+    if (!isHovered || imageUrls.length <= 1) return;
+
+    const nextImage = new Image();
+    nextImage.decoding = 'async';
+    nextImage.src = imageUrls[(activeImageIndex + 1) % imageUrls.length];
+  }, [activeImageIndex, imageUrls, isHovered]);
+
+  useEffect(() => {
+    if (activeImageIndex >= imageUrls.length) {
+      setActiveImageIndex(0);
+    }
+  }, [activeImageIndex, imageUrls.length]);
 
 
   const productStatus = product.productStatus || 'available';
@@ -68,18 +94,42 @@ const discount = product.originalPrice
   );
 
   return (
-    <div className="block cursor-pointer">
-      <div className="card relative overflow-hidden group transition-transform hover:-translate-y-1">
+    <div
+      className="block h-full cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setActiveImageIndex(0);
+      }}
+    >
+      <div className="card relative flex h-full flex-col overflow-hidden group transition-transform hover:-translate-y-1">
 
 
         {/* Image Container */}
         <Link to={`/product/${product.id}`} className="block relative overflow-hidden aspect-[4/5]">
           {statusBadge}
           <img
+            key={imageUrl}
             src={imageUrl}
             alt={product.name}
-            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchPriority={priority ? 'high' : 'auto'}
+            className="w-full h-full object-cover transform group-hover:scale-110 transition-all duration-500"
           />
+
+          {imageUrls.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/25 px-2 py-1 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+              {imageUrls.map((_, index) => (
+                <span
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    activeImageIndex === index ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
           
           {/* Discount Badge */}
 
@@ -122,19 +172,19 @@ const discount = product.originalPrice
         </div>
 
         {/* Content */}
-        <Link to={`/product/${product.id}`} className="block p-4 hover:opacity-90 transition-opacity">
+        <Link to={`/product/${product.id}`} className="flex flex-1 flex-col p-4 hover:opacity-90 transition-opacity">
           {/* Category */}
-          <p className="text-xs text-gold-600 font-medium uppercase tracking-wider">
+          <p className="h-4 truncate text-xs text-gold-600 font-medium uppercase tracking-wider">
             {getCategoryLabel(product.category)}
           </p>
           
           {/* Name */}
-          <h3 className="mt-1 text-luxury-900 font-medium line-clamp-2 group-hover:text-gold-600 transition-colors">
+          <h3 className="mt-1 min-h-[2.75rem] text-luxury-900 font-medium leading-snug line-clamp-2 group-hover:text-gold-600 transition-colors">
             {product.name}
           </h3>
           
           {/* Rating */}
-          <div className="mt-2 flex items-center">
+          <div className="mt-2 flex h-5 items-center">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
@@ -153,19 +203,19 @@ const discount = product.originalPrice
           </div>
           
           {/* Price */}
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-lg font-semibold text-luxury-900">
+          <div className="mt-2 flex h-7 items-center gap-2 overflow-hidden">
+            <span className="truncate text-lg font-semibold text-luxury-900">
               ₹{product.price?.toLocaleString()}
             </span>
             {product.originalPrice && (
-              <span className="text-sm text-luxury-400 line-through">
+              <span className="shrink-0 text-sm text-luxury-400 line-through">
                 ₹{product.originalPrice.toLocaleString()}
               </span>
             )}
           </div>
 
           {/* Stock Status */}
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-auto flex h-6 items-center gap-2 pt-2">
             <Check className="w-4 h-4 text-green-500" />
             <span className="text-sm text-green-600 font-medium">
               {product.inStock ? 'In Stock' : 'Out of Stock'}

@@ -1,31 +1,98 @@
 // Razorpay Payment Service (Frontend)
 // Calls Firebase Functions REST endpoints securely.
 
+import firebaseApp from './firebase';
+
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
+const FIREBASE_PROJECT_ID =
+  import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseApp?.options?.projectId;
+const FIREBASE_FUNCTIONS_REGION =
+  import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || 'us-central1';
+
+const getDefaultFunctionUrl = (functionName) => {
+  if (!FIREBASE_PROJECT_ID) return '';
+  return `https://${FIREBASE_FUNCTIONS_REGION}-${FIREBASE_PROJECT_ID}.cloudfunctions.net/${functionName}`;
+};
+
 // These are REST endpoint URLs (NO secrets).
-const CREATE_ORDER_URL = import.meta.env.VITE_FIREBASE_CREATE_ORDER_URL;
-const VERIFY_PAYMENT_URL = import.meta.env.VITE_FIREBASE_VERIFY_PAYMENT_URL;
+const CREATE_ORDER_URL =
+  import.meta.env.VITE_FIREBASE_CREATE_ORDER_URL ||
+  (import.meta.env.DEV ? '/api/create-order' : getDefaultFunctionUrl('createOrder'));
+const VERIFY_PAYMENT_URL =
+  import.meta.env.VITE_FIREBASE_VERIFY_PAYMENT_URL ||
+  (import.meta.env.DEV ? '/api/verify-payment' : getDefaultFunctionUrl('verifyPayment'));
 
 
+
+const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
+
+function removeRazorpayScript() {
+  document
+    .querySelectorAll(`script[src="${RAZORPAY_SCRIPT_URL}"]`)
+    .forEach((script) => script.remove());
+}
+
+function createRazorpayInstance(RazorpayCheckout, options) {
+  if (typeof RazorpayCheckout !== 'function') {
+    throw new Error('Razorpay checkout script did not load correctly');
+  }
+
+  const candidates = [];
+
+  try {
+    candidates.push(new RazorpayCheckout(options));
+  } catch (error) {
+    console.warn('Razorpay constructor failed:', error);
+  }
+
+  try {
+    candidates.push(RazorpayCheckout(options));
+  } catch (error) {
+    console.warn('Razorpay factory call failed:', error);
+  }
+
+  const instance = candidates.find((candidate) => candidate && typeof candidate.open === 'function');
+  if (instance) return instance;
+
+  const shape = candidates
+    .filter(Boolean)
+    .map((candidate) => Object.keys(candidate).slice(0, 10).join(', '))
+    .filter(Boolean)
+    .join(' | ');
+
+  throw new Error(
+    shape
+      ? `Razorpay checkout is unavailable. Loaded object keys: ${shape}`
+      : 'Razorpay checkout is unavailable. Please refresh and try again.'
+  );
+}
 
 /**
  * Load Razorpay checkout script.
+ * @param {{ forceReload?: boolean }} options
  * @returns {Promise<any>} Resolves with window.Razorpay constructor.
  */
-export const loadRazorpay = () => {
+export const loadRazorpay = ({ forceReload = false } = {}) => {
   return new Promise((resolve, reject) => {
-    if (window.Razorpay) {
+    if (forceReload) {
+      removeRazorpayScript();
+      delete window.Razorpay;
+    }
+
+    if (typeof window.Razorpay === 'function') {
       resolve(window.Razorpay);
       return;
     }
 
     const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/razorpay.js';
+    script.src = RAZORPAY_SCRIPT_URL;
     script.async = true;
     script.onload = () => {
-      if (window.Razorpay) resolve(window.Razorpay);
-      else reject(new Error('Failed to load Razorpay'));
+      setTimeout(() => {
+        if (typeof window.Razorpay === 'function') resolve(window.Razorpay);
+        else reject(new Error('Failed to load Razorpay'));
+      }, 100);
     };
     script.onerror = () => reject(new Error('Failed to load Razorpay script'));
 
@@ -85,7 +152,7 @@ export const createRazorpayOrder = async (amountPaise, currency = 'INR', options
 
   if (!response.ok) {
     const err = await parseErrorResponse(response);
-    throw new Error(err || 'Failed to create payment order');
+    throw new Error(err || `Failed to create payment order (${response.status})`);
   }
 
   const data = await response.json();
@@ -137,9 +204,7 @@ export const openCheckout = async (options) => {
   }
   if (!options) throw new Error('Missing checkout options');
 
-  const razorpay = await loadRazorpay();
-
-  const rzp = new razorpay({
+  const checkoutOptions = {
     key: RAZORPAY_KEY_ID,
     ...options,
     handler: (response) => {
@@ -151,7 +216,18 @@ export const openCheckout = async (options) => {
         if (typeof options.onDismiss === 'function') options.onDismiss();
       },
     },
-  });
+  };
+
+  let RazorpayCheckout = await loadRazorpay();
+  let rzp;
+
+  try {
+    rzp = createRazorpayInstance(RazorpayCheckout, checkoutOptions);
+  } catch (error) {
+    console.warn('Reloading Razorpay checkout after invalid instance:', error);
+    RazorpayCheckout = await loadRazorpay({ forceReload: true });
+    rzp = createRazorpayInstance(RazorpayCheckout, checkoutOptions);
+  }
 
   rzp.open();
   return rzp;

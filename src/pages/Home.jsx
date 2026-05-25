@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Star, Truck, Shield, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Star, Truck, Shield, RefreshCw, ChevronLeft, ChevronRight, BadgePercent, Gift } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/UI/ProductCard';
@@ -95,6 +95,37 @@ const HomePage = () => {
     }
   ];
 
+  const offers = [
+    {
+      icon: BadgePercent,
+      title: 'Starting ₹199',
+      text: 'Daily wear jewellery picks',
+      to: '/products?maxPrice=199&sortBy=price-low',
+      tone: 'from-gold-500 to-gold-700'
+    },
+    {
+      icon: Gift,
+      title: 'Under ₹499',
+      text: 'Gift-ready favourites',
+      to: '/products?maxPrice=499&sortBy=price-low',
+      tone: 'from-luxury-800 to-luxury-600'
+    },
+    {
+      icon: Sparkles,
+      title: '25% OFF',
+      text: `${getCategoryLabel('Lux Wear')} collection`,
+      to: '/products?category=Lux%20Wear',
+      tone: 'from-rose-500 to-gold-600'
+    },
+    {
+      icon: Star,
+      title: 'Best Rated',
+      text: 'Customer-loved pieces',
+      to: '/products?sortBy=rating',
+      tone: 'from-emerald-700 to-gold-600'
+    }
+  ];
+
   const featuredProducts = getFeaturedProducts();
 
   return (
@@ -105,6 +136,7 @@ const HomePage = () => {
         keywords="luxury necklaces, luxe ring necklaces, royal braces necklaces, elite series jewelry, piercing jewelry, handcrafted necklaces, jewelry store"
         canonical="https://panstellia.com"
         structuredData={getOrganizationSchema()}
+        preloadImages={[heroImages[0]]}
       />
       {/* Hero Section */}
       <section className="relative h-[90vh] flex items-center bg-gradient-to-r from-luxury-100 via-luxury-50 to-gold-50 overflow-hidden">
@@ -158,6 +190,9 @@ const HomePage = () => {
                       key={index}
                       src={img}
                       alt={`Featured Necklace ${index + 1}`}
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      fetchPriority={index === 0 ? 'high' : 'low'}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: index === currentHeroImageIndex ? 1 : 0 }}
                       exit={{ opacity: 0 }}
@@ -197,6 +232,66 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Offers */}
+      <section className="py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between gap-6 mb-8">
+            <div>
+              <h2 className="font-serif text-3xl md:text-4xl font-bold text-luxury-900">Today&apos;s Offers</h2>
+              <p className="mt-3 text-luxury-600">Quick deals for every budget and occasion</p>
+            </div>
+            <Link to="/products?sortBy=price-low" className="hidden sm:inline-flex btn-secondary items-center">
+              View Deals
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 items-stretch gap-4 lg:grid-cols-4">
+            {offers.map((offer, index) => (
+              <motion.div
+                key={offer.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08 }}
+                className="h-full"
+              >
+                <Link
+                  to={offer.to}
+                  className={`group relative flex h-36 overflow-hidden rounded-xl bg-gradient-to-br ${offer.tone} p-4 text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl sm:h-40 sm:p-5`}
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.34),transparent_38%)] opacity-80"></div>
+                  <div className="relative z-10 flex h-full min-w-0 flex-1 flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <offer.icon className="h-6 w-6 shrink-0 drop-shadow sm:h-7 sm:w-7" />
+                      <span className="rounded-full bg-white/18 px-2 py-1 text-[10px] font-semibold backdrop-blur-sm sm:px-3 sm:text-xs">
+                        Limited
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-serif text-lg font-bold leading-tight sm:text-2xl">{offer.title}</h3>
+                      <p className="mt-1 line-clamp-2 min-h-[2rem] text-xs leading-4 text-white/85 sm:mt-2 sm:text-sm">
+                        {offer.text}
+                      </p>
+                      <span className="mt-2 inline-flex items-center text-xs font-semibold sm:mt-4 sm:text-sm">
+                        Shop now
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-6 text-center sm:hidden">
+            <Link to="/products?sortBy=price-low" className="btn-secondary inline-flex items-center justify-center">
+              View Deals
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Categories */}
       <section className="py-16 bg-luxury-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -205,7 +300,7 @@ const HomePage = () => {
             <p className="mt-4 text-luxury-600">Find the perfect piece for every occasion</p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {categories.map((category, index) => (
               <motion.div
                 key={category.name}
@@ -218,6 +313,9 @@ const HomePage = () => {
                     <img 
                       src={category.image} 
                       alt={getCategoryLabel(category.name)}
+                      loading={index < 5 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      fetchPriority={index < 5 ? 'high' : 'auto'}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -266,7 +364,7 @@ const HomePage = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} priority={index < 4} />
                 </motion.div>
               ))
             )}

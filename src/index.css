@@ -49,6 +49,177 @@
     @apply text-gold-600 hover:text-gold-700 transition-colors duration-200 
            underline-offset-4 hover:underline;
   }
+
+  .nav-glow-link {
+    @apply relative inline-flex h-11 w-11 items-center justify-center rounded-full font-medium text-luxury-700 transition-all duration-300;
+    text-shadow: 0 0 0 rgba(219, 145, 45, 0);
+  }
+
+  .nav-glow-link::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: radial-gradient(circle at 50% 50%, rgba(245, 187, 71, 0.28), rgba(245, 187, 71, 0));
+    opacity: 0;
+    transform: scale(0.78);
+    transition: opacity 300ms ease, transform 300ms ease;
+    pointer-events: none;
+  }
+
+  .nav-glow-link::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.35rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, #db912d, #f5bb47, transparent);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: opacity 300ms ease, transform 300ms ease;
+    box-shadow: 0 0 14px rgba(219, 145, 45, 0.55);
+  }
+
+  .nav-glow-link:hover,
+  .nav-glow-link:focus-visible {
+    @apply text-gold-600;
+    background: rgba(255, 255, 255, 0.55);
+    transform: translateY(-2px);
+    text-shadow: 0 0 12px rgba(219, 145, 45, 0.45), 0 0 28px rgba(245, 187, 71, 0.25);
+  }
+
+  .nav-glow-link:hover::before,
+  .nav-glow-link:focus-visible::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .nav-glow-link:hover::after,
+  .nav-glow-link:focus-visible::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .nav-glow-link--active {
+    @apply w-auto gap-2 px-4 text-gold-600;
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 10px 28px rgba(219, 145, 45, 0.15), inset 0 0 0 1px rgba(219, 145, 45, 0.16);
+    text-shadow: 0 0 12px rgba(219, 145, 45, 0.36);
+  }
+
+  .nav-glow-link--active::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .nav-glow-link--active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .mobile-nav-glow-link {
+    @apply relative flex min-w-0 items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium text-luxury-700 transition-all duration-300;
+    text-shadow: 0 0 0 rgba(219, 145, 45, 0);
+  }
+
+  .mobile-nav-glow-link::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 0.75rem;
+    background: radial-gradient(circle at 1.75rem 50%, rgba(245, 187, 71, 0.22), rgba(245, 187, 71, 0));
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 300ms ease, transform 300ms ease;
+    pointer-events: none;
+  }
+
+  .mobile-nav-glow-link::after {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 0.35rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #db912d, #f5bb47, transparent);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: opacity 300ms ease, transform 300ms ease;
+    box-shadow: 0 0 14px rgba(219, 145, 45, 0.38);
+  }
+
+  .mobile-nav-glow-link:hover,
+  .mobile-nav-glow-link:focus-visible {
+    @apply text-gold-600;
+    background: rgba(255, 255, 255, 0.72);
+    text-shadow: 0 0 12px rgba(219, 145, 45, 0.32);
+  }
+
+  .mobile-nav-glow-link:hover::before,
+  .mobile-nav-glow-link:focus-visible::before,
+  .mobile-nav-glow-link--active::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .mobile-nav-glow-link:hover::after,
+  .mobile-nav-glow-link:focus-visible::after,
+  .mobile-nav-glow-link--active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .mobile-nav-glow-link--active {
+    @apply text-gold-600;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: 0 10px 28px rgba(219, 145, 45, 0.12), inset 0 0 0 1px rgba(219, 145, 45, 0.14);
+    text-shadow: 0 0 12px rgba(219, 145, 45, 0.3);
+  }
+
+  .nav-active-label {
+    @apply relative z-10 max-w-40 overflow-hidden whitespace-nowrap text-sm font-semibold;
+    animation: navLabelReveal 220ms ease both;
+  }
+
+  .nav-tooltip {
+    @apply pointer-events-none absolute left-1/2 top-[calc(100%+0.65rem)] z-50 -translate-x-1/2 whitespace-nowrap rounded-md bg-luxury-900 px-3 py-1.5 text-xs font-semibold text-white opacity-0 shadow-xl transition-all duration-200;
+    transform: translate(-50%, -0.25rem) scale(0.96);
+  }
+
+  .nav-tooltip::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -0.3rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    transform: translateX(-50%) rotate(45deg);
+    background: #2f2721;
+  }
+
+  .nav-glow-link:hover .nav-tooltip,
+  .nav-glow-link:focus-visible .nav-tooltip {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  @keyframes navLabelReveal {
+    from {
+      max-width: 0;
+      opacity: 0;
+      transform: translateX(-0.35rem);
+    }
+    to {
+      max-width: 10rem;
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
   
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;

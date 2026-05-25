@@ -2,6 +2,32 @@ import express from 'express';
 import cors from 'cors';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, '..');
+
+function loadRootEnv() {
+  const envPath = path.join(rootDir, '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const separatorIndex = trimmed.indexOf('=');
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '');
+    if (key && process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+loadRootEnv();
 
 const app = express();
 
@@ -15,13 +41,15 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 
 const getMissingEnv = () => {
   const missing = [];
-  if (!process.env.RAZORPAY_KEY_ID) missing.push('RAZORPAY_KEY_ID');
+  if (!process.env.RAZORPAY_KEY_ID && !process.env.VITE_RAZORPAY_KEY_ID) {
+    missing.push('RAZORPAY_KEY_ID');
+  }
   if (!process.env.RAZORPAY_KEY_SECRET) missing.push('RAZORPAY_KEY_SECRET');
   return missing;
 };
 
 const getRazorpayClient = () => {
-  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) return null;
@@ -32,8 +60,42 @@ const getRazorpayClient = () => {
   });
 };
 
+async function createRazorpayOrder({ amount, currency, receipt, notes }) {
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const credentials = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+
+  const response = await fetch('https://api.razorpay.com/v1/orders', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      amount: Number(amount),
+      currency,
+      receipt,
+      notes,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message =
+      data?.error?.description ||
+      data?.error?.reason ||
+      data?.error?.code ||
+      'Failed to create order';
+    const error = new Error(message);
+    error.statusCode = response.status;
+    error.razorpayError = data?.error;
+    throw error;
+  }
+
+  return data;
+}
+
 app.post('/create-order', async (req, res) => {
-  const razorpay = getRazorpayClient();
   const missing = getMissingEnv();
 
   if (missing.length) {
@@ -60,12 +122,8 @@ app.post('/create-order', async (req, res) => {
     });
   }
 
-  if (!razorpay) {
-    return res.status(500).json({ error: 'Razorpay client not configured' });
-  }
-
   try {
-    const order = await razorpay.orders.create({
+    const order = await createRazorpayOrder({
       amount: Number(amount),
       currency,
       receipt,
@@ -84,13 +142,13 @@ app.post('/create-order', async (req, res) => {
   } catch (error) {
     console.error('Error creating order:', error);
 
-    if (error?.statusCode === 401 || error?.error?.code === 'AUTHENTICATION_FAILURE') {
+    if (error?.statusCode === 401 || error?.razorpayError?.code === 'AUTHENTICATION_FAILURE') {
       return res.status(401).json({ error: 'Payment gateway authentication failed' });
     }
 
     if (error?.statusCode) {
       return res.status(error.statusCode).json({
-        error: error?.error?.description || 'Failed to create order',
+        error: error?.message || 'Failed to create order',
       });
     }
 
@@ -108,7 +166,7 @@ app.post('/verify-payment', async (req, res) => {
   }
 
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
 
   if (!keySecret) {
     console.error('RAZORPAY_KEY_SECRET not configured');

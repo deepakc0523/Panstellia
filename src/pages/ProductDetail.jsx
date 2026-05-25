@@ -24,6 +24,8 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
 
   const touchStartXRef = useRef(null);
 
@@ -97,6 +99,17 @@ const ProductDetailPage = () => {
     }
   };
 
+  const handleZoomMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    setZoomPosition({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y))
+    });
+  };
+
   return (
     <div className="min-h-screen bg-luxury-50 py-8">
       <SEOHelmet 
@@ -105,6 +118,7 @@ const ProductDetailPage = () => {
         keywords={`${product.name}, ${getCategoryLabel(product.category)} necklace, jewelry`}
         canonical={`https://panstellia.com/product/${product.id}`}
         ogImage={imageUrl}
+        preloadImages={[imageUrl]}
         structuredData={getProductSchema({
           name: product.name,
           description: product.description,
@@ -131,9 +145,12 @@ const ProductDetailPage = () => {
 {/* Product Info */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Image Gallery */}
-          <div className="space-y-4">
+          <div className="space-y-4 lg:relative">
             <div
-              className="relative overflow-hidden rounded-xl aspect-[4/5] bg-white group"
+              className="relative overflow-hidden rounded-xl aspect-[4/5] lg:aspect-auto lg:h-[calc(100dvh-26rem)] lg:min-h-[420px] lg:max-h-[620px] bg-white group"
+              onMouseEnter={() => setIsZooming(true)}
+              onMouseLeave={() => setIsZooming(false)}
+              onMouseMove={handleZoomMove}
               onTouchStart={(e) => {
                 touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
               }}
@@ -165,7 +182,7 @@ const ProductDetailPage = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="w-full h-full object-cover transform will-change-transform group-hover:scale-[1.06] transition-transform duration-500"
+                  className="w-full h-full object-contain transform will-change-transform group-hover:scale-[1.04] transition-transform duration-500"
                 />
               </AnimatePresence>
 
@@ -173,6 +190,16 @@ const ProductDetailPage = () => {
                 <div className="absolute top-4 left-4 badge badge-error text-lg px-4 py-2">
                   -{discount}% OFF
                 </div>
+              )}
+
+              {isZooming && (
+                <div
+                  className="hidden lg:block absolute z-20 w-44 h-44 -translate-x-1/2 -translate-y-1/2 border border-white/80 bg-white/35 shadow-[0_12px_40px_rgba(30,20,12,0.18)] backdrop-blur-[2px] pointer-events-none"
+                  style={{
+                    left: `${zoomPosition.x}%`,
+                    top: `${zoomPosition.y}%`
+                  }}
+                />
               )}
 
               {/* Navigation arrows */}
@@ -198,6 +225,18 @@ const ProductDetailPage = () => {
               {/* Luxury glass highlight */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-tr from-gold-500/10 via-transparent to-gold-600/10" />
             </div>
+
+            {isZooming && (
+              <div
+                className="hidden lg:block absolute left-[calc(100%+1.5rem)] top-0 z-30 w-[min(44vw,620px)] h-[calc(100dvh-26rem)] min-h-[420px] max-h-[620px] rounded-xl border border-luxury-100 bg-white shadow-2xl pointer-events-none"
+                style={{
+                  backgroundImage: `url(${imageUrl})`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '240%',
+                  backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`
+                }}
+              />
+            )}
 
             <div className="flex gap-4 overflow-x-auto scrollbar-hide">
               {imageUrls.map((img, index) => {

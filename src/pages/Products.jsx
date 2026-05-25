@@ -16,12 +16,17 @@ const ProductsPage = () => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const searchQuery = searchParams.get('search') || '';
+  const categoryQuery = searchParams.get('category') || '';
+  const minPriceQuery = searchParams.get('minPrice') || '';
+  const maxPriceQuery = searchParams.get('maxPrice') || '';
+  const sortByQuery = searchParams.get('sortBy') || 'newest';
   
   const [filters, setFilters] = useState({
-    category: searchParams.get('category') || 'All',
-    minPrice: '',
-    maxPrice: '',
-    sortBy: 'newest'
+    category: categoryQuery || 'All',
+    minPrice: minPriceQuery,
+    maxPrice: maxPriceQuery,
+    sortBy: sortByQuery
   });
 
   const categories = ['All', 'Gold', 'Silver', 'Lux Wear', 'Party Wear', 'Elegant Spark'];
@@ -32,8 +37,27 @@ const ProductsPage = () => {
     { value: 'rating', label: 'Rating' }
   ];
 
-  const searchQuery = searchParams.get('search') || '';
-  const categoryQuery = searchParams.get('category') || '';
+  useEffect(() => {
+    setFilters((current) => {
+      const next = {
+        category: categoryQuery || 'All',
+        minPrice: minPriceQuery,
+        maxPrice: maxPriceQuery,
+        sortBy: sortByQuery
+      };
+
+      if (
+        current.category === next.category &&
+        current.minPrice === next.minPrice &&
+        current.maxPrice === next.maxPrice &&
+        current.sortBy === next.sortBy
+      ) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [categoryQuery, minPriceQuery, maxPriceQuery, sortByQuery]);
 
   useEffect(() => {
     const search = searchQuery;
@@ -147,6 +171,90 @@ const ProductsPage = () => {
     filters.maxPrice
   ].filter(Boolean).length;
 
+  const renderFilterControls = ({ onClose } = {}) => (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold text-luxury-900">Filters</h2>
+        <div className="flex items-center gap-3">
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-gold-600 hover:text-gold-700"
+            >
+              Clear all
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="rounded-lg p-2 text-luxury-600 transition-colors hover:bg-luxury-100 hover:text-gold-600"
+              aria-label="Close filters"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Category */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-luxury-700 mb-2">Category</h3>
+        <div className="space-y-2">
+          {categories.map(category => (
+            <label key={category} className="flex items-center">
+              <input
+                type="radio"
+                name="category"
+                checked={filters.category === category}
+                onChange={() => handleFilterChange('category', category)}
+                className="w-4 h-4 text-gold-600 border-luxury-300 focus:ring-gold-500"
+              />
+              <span className="ml-2 text-sm text-luxury-600">{getCategoryLabel(category)}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Range */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-luxury-700 mb-2">Price Range</h3>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            placeholder="Min"
+            value={filters.minPrice}
+            onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+            className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
+          />
+          <span className="text-luxury-400">-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={filters.maxPrice}
+            onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+            className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Sort */}
+      <div>
+        <h3 className="text-sm font-medium text-luxury-700 mb-2">Sort By</h3>
+        <select
+          value={filters.sortBy}
+          onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+          className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
+        >
+          {sortOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-luxury-50 py-8">
       <SEOHelmet 
@@ -168,76 +276,9 @@ const ProductsPage = () => {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="lg:w-64 flex-shrink-0">
+          <div className="hidden lg:block lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-md p-6 sticky top-24">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-luxury-900">Filters</h2>
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-sm text-gold-600 hover:text-gold-700"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-
-              {/* Category */}
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-luxury-700 mb-2">Category</h3>
-                <div className="space-y-2">
-                  {categories.map(category => (
-                    <label key={category} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="category"
-                        checked={filters.category === category}
-                        onChange={() => handleFilterChange('category', category)}
-                        className="w-4 h-4 text-gold-600 border-luxury-300 focus:ring-gold-500"
-                      />
-                      <span className="ml-2 text-sm text-luxury-600">{getCategoryLabel(category)}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Range */}
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-luxury-700 mb-2">Price Range</h3>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.minPrice}
-                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                    className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
-                  />
-                  <span className="text-luxury-400">-</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.maxPrice}
-                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                    className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Sort */}
-              <div>
-                <h3 className="text-sm font-medium text-luxury-700 mb-2">Sort By</h3>
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                  className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
-                >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {renderFilterControls()}
             </div>
           </div>
 
@@ -261,14 +302,22 @@ const ProductsPage = () => {
               <div className="flex items-center gap-4">
                 {/* Mobile Filters - Show on mobile */}
                 {showFilters && (
-                  <div className="lg:hidden fixed inset-0 z-50 bg-white p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="font-semibold text-luxury-900">Filters</h2>
-                      <button onClick={() => setShowFilters(false)}>
-                        <X className="w-6 h-6" />
+                  <div className="lg:hidden fixed inset-x-4 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl bg-white p-5 shadow-2xl">
+                    {renderFilterControls({ onClose: () => setShowFilters(false) })}
+                    <div className="mt-6 grid grid-cols-2 gap-3">
+                      <button
+                        onClick={clearFilters}
+                        className="btn-secondary px-4 py-2 text-sm"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        onClick={() => setShowFilters(false)}
+                        className="btn-primary px-4 py-2 text-sm"
+                      >
+                        Apply
                       </button>
                     </div>
-                    {/* Add filter UI here */}
                   </div>
                 )}
 
@@ -318,13 +367,13 @@ const ProductsPage = () => {
                 </button>
               </div>
             ) : (
-              <div className={`grid gap-6 ${
+              <div className={`grid auto-rows-fr items-stretch gap-6 ${
                 viewMode === 'grid' 
                   ? 'grid-cols-2 md:grid-cols-3' 
                   : 'grid-cols-1'
               }`}>
-                {filteredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
+                {filteredProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} priority={index < 6} />
                 ))}
               </div>
             )}
