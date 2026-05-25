@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Package, CheckCircle, XCircle, Clock, ChevronLeft } from 'lucide-react';
+import { Package, CheckCircle, XCircle, Clock, ChevronLeft, Truck } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
 import SEOHelmet from '../utils/seoHelmet';
+import { getDirectImageUrl } from '../utils/imageUtils';
 
 const OrderDetailsPage = () => {
+
   const { id } = useParams();
   const { user } = useAuth();
 
@@ -23,21 +25,61 @@ const OrderDetailsPage = () => {
       setError(null);
 
       try {
+        // 1) Try fetching from `orders` collection (COD flow writes here)
         const ordersRef = collection(db, 'orders');
-        const q = query(
+        const qOrders = query(
           ordersRef,
           where('userId', '==', user.uid),
           where('__name__', '==', id)
         );
 
-        const snap = await getDocs(q);
+        const snapOrders = await getDocs(qOrders);
 
-        if (snap.empty) {
-          setOrder(null);
-        } else {
-          const doc = snap.docs[0];
+        if (!snapOrders.empty) {
+          const doc = snapOrders.docs[0];
           setOrder({ id: doc.id, ...doc.data() });
+          return;
         }
+
+        // 2) Fallback: Razorpay success seems to persist into `payments` collection.
+        // In Orders page we route using `order.id` from `orders` query, so for Razorpay
+        // we also try matching by `payment.orderId`.
+        const paymentsRef = collection(db, 'payments');
+        const qPayments = query(
+          paymentsRef,
+          where('userId', '==', user.uid),
+          where('orderId', '==', id)
+        );
+
+        const snapPayments = await getDocs(qPayments);
+
+        if (!snapPayments.empty) {
+          const doc = snapPayments.docs[0];
+          const data = doc.data();
+
+          // Normalize field names so UI can use a consistent shape.
+          setOrder({
+            id,
+            status: data.paymentStatus || data.status || 'paid',
+            total: data.amount
+              ? // amount is stored in paise for payments
+                (Number(data.amount) / 100)
+              : data.total,
+            items: data.items || [],
+            paymentMethod: data.paymentMethod,
+            address: data.shippingAddress,
+            city: data.shippingCity,
+            state: data.shippingState,
+            pincode: data.shippingPincode,
+            shipping: data.shipping,
+            tax: data.tax || data.gst,
+            gst: data.gst,
+            createdAt: data.createdAt,
+          });
+          return;
+        }
+
+        setOrder(null);
       } catch (e) {
         console.error('Error fetching order:', e);
         setError(e);
@@ -49,6 +91,7 @@ const OrderDetailsPage = () => {
 
     fetchOrder();
   }, [user, id]);
+
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -73,6 +116,15 @@ const OrderDetailsPage = () => {
   };
 
   const status = order?.status || 'unknown';
+
+  const formatAddress = (o) => {
+    const parts = [o?.address, o?.city, o?.state, o?.pincode]
+      .map((x) => (typeof x === 'string' ? x.trim() : '') )
+      .filter(Boolean);
+
+    return parts.length ? parts.join(', ') : 'N/A';
+  };
+
 
   return (
     <div className="min-h-screen bg-luxury-50 py-8">
@@ -147,31 +199,154 @@ const OrderDetailsPage = () => {
                 <span className="ml-1 capitalize">{status}</span>
               </div>
 
-              {order.items?.length > 0 && (
-                <div className="mt-6">
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
                   <h2 className="font-semibold text-luxury-900 mb-3">Items</h2>
-                  <div className="space-y-3">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-luxury-900 font-medium">{item.name}</p>
-                          <p className="text-sm text-luxury-600">Qty: {item.quantity}</p>
+
+                  {order.items?.length > 0 ? (
+                    <div className="space-y-3">
+                      {order.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start justify-between gap-4"
+                        >
+                          <div className="flex items-start gap-4">
+                            {item.image ? (
+                              <img
+                                src={getDirectImageUrl(item.image)}
+                                alt={item.name}
+                                className="w-16 h-16 object-cover rounded-lg"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-lg bg-luxury-100" />
+                            )}
+
+                            <div>
+                              <p className="text-luxury-900 font-medium">
+                                {item.name || 'Item'}
+                              </p>
+                              <p className="text-sm text-luxury-600">
+                                Qty: {item.quantity ?? 1}
+                              </p>
+                              <p className="text-sm text-luxury-600">
+                                Selling Price: ₹{Number(item.price || 0).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="text-luxury-900 font-semibold">
+                            ₹{Number(item.price || 0).toLocaleString()}
+                          </p>
                         </div>
-                        <p className="text-luxury-900 font-semibold">
-                          ₹{item.price?.toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-luxury-600">No items found.</p>
+                  )}
+                </div>
+
+                <div>
+                  <h2 className="font-semibold text-luxury-900 mb-3 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-gold-600" />
+                    Shipping & Billing
+                  </h2>
+
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-luxury-500">Address</p>
+                      <p className="text-luxury-900 font-medium">
+                        {formatAddress(order)}
+                      </p>
+
+                    </div>
+
+                    <div className="space-y-2 border-t border-luxury-200 pt-4">
+                      {(() => {
+                        // Keep the ordering structure consistent with CartContext/Checkout totals:
+                        // subtotal = sum(item.price * qty)
+                        // shipping = subtotal > 1000 ? 0 : 99
+                        // tax (5%) = subtotal * 0.05
+
+                        const total = Number(order.total ?? 0) || 0;
+
+                        // Prefer persisted values if present.
+                        const persistedSubtotal = order.subtotal != null ? Number(order.subtotal) : null;
+                        const persistedShipping = order.shipping != null ? Number(order.shipping) : null;
+                        const persistedTax = order.tax != null ? Number(order.tax) : (order.gst != null ? Number(order.gst) : null);
+
+                        let subtotal;
+                        let shipping;
+                        let tax;
+
+                        if (persistedSubtotal != null && !Number.isNaN(persistedSubtotal)) {
+                          subtotal = persistedSubtotal;
+                          shipping = persistedShipping != null && !Number.isNaN(persistedShipping)
+                            ? persistedShipping
+                            : (subtotal > 1000 ? 0 : 99);
+                          tax = persistedTax != null && !Number.isNaN(persistedTax)
+                            ? persistedTax
+                            : (subtotal * 0.05);
+                        } else {
+                          // Infer from total (works with current Firestore persistence where only total is guaranteed).
+                          // Since: total = subtotal + shipping + subtotal*0.05 => total = subtotal*1.05 + shipping
+                          // where shipping is 0 if subtotal > 1000 else 99.
+                          // Use best-effort inference with the same shipping rule as CartContext.
+                          const assumedTaxRate = 0.05;
+
+                          // Try shipping = 0 first.
+                          let inferredSubtotalA = (total - 0) / (1 + assumedTaxRate);
+                          let inferredShippingA = inferredSubtotalA > 1000 ? 0 : 99;
+                          let inferredTaxA = inferredSubtotalA * assumedTaxRate;
+
+                          // If that contradicts shipping rule, fall back to shipping=99 case.
+                          // (This is rare due to floating/rounding.)
+                          if (inferredShippingA !== 0) {
+                            // shipping=99 => subtotal = (total-99)/1.05
+                            let inferredSubtotalB = (total - 99) / (1 + assumedTaxRate);
+                            subtotal = inferredSubtotalB;
+                            shipping = 99;
+                            tax = inferredSubtotalB * assumedTaxRate;
+                          } else {
+                            subtotal = inferredSubtotalA;
+                            shipping = 0;
+                            tax = inferredTaxA;
+                          }
+                        }
+
+                        // Final sanitization
+                        subtotal = Number.isFinite(subtotal) ? subtotal : 0;
+                        shipping = Number.isFinite(shipping) ? shipping : 0;
+                        tax = Number.isFinite(tax) ? tax : 0;
+
+                        return (
+                          <>
+                            <div className="flex items-center justify-between text-sm text-luxury-600">
+                              <span>Subtotal</span>
+                              <span>₹{subtotal.toLocaleString()}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm text-luxury-600">
+                              <span>Shipping</span>
+                              <span>₹{shipping.toLocaleString()}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm text-luxury-600">
+                              <span>Tax (5%)</span>
+                              <span>₹{tax.toLocaleString()}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-lg font-semibold text-luxury-900 pt-2 border-t border-luxury-200">
+                              <span>Total</span>
+                              <span>₹{total.toLocaleString()}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              <div className="mt-6 flex items-center justify-between">
-                <div className="text-sm text-luxury-600">Total</div>
-                <div className="font-semibold text-luxury-900">
-                  ₹{order.total?.toLocaleString()}
-                </div>
               </div>
+
             </div>
           </div>
         )}

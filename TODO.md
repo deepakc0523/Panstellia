@@ -1,8 +1,7 @@
-- [ ] Inspect Admin product form image handling
-- [ ] Implement IMGBB direct image upload helper using IMGBB API
-- [ ] Update Admin UI to add file inputs for cover + multiple gallery images
-- [ ] Wire upload results to productForm.image and productForm.imagesText
-- [ ] Keep existing URL-based inputs working for backward compatibility
-- [ ] Add previews/loading/error feedback for uploads
-- [ ] Build/test app to ensure no runtime issues
+- [ ] Update `src/pages/OrderDetails.jsx` to fall back to fetching from `payments` collection when `orders` doc is not found.
+- [ ] Update `src/pages/OrderDetails.jsx` UI to show product images, shipping address, per-item selling price, shipping cost, and GST/tax with safe defaults.
+- [x] Verify createdAt formatting and route id matching for both `orders` and `payments`.
+- [x] Run lint/build (if available) and do a quick manual test of Orders → View Details.
+
+
 

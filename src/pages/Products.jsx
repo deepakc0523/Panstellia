@@ -4,9 +4,21 @@ import { Filter, X, Grid, List } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/UI/ProductCard';
 import SEOHelmet from '../utils/seoHelmet';
-import { getCategoryLabel } from '../utils/categoryLabels';
+import { getCategoryLabel, categoryLabelMap } from '../utils/categoryLabels';
 
 const ProductsPage = () => {
+  const getCanonicalCategoryKeyFromQuery = (queryCategory) => {
+    // The app sometimes receives display labels from the URL query (e.g. category=Piercings)
+    // while product.category is stored as the canonical key (e.g. Party Wear).
+    if (!queryCategory || queryCategory === 'All') return 'All';
+
+    // If the query already matches a canonical key, use it directly.
+    if (Object.prototype.hasOwnProperty.call(categoryLabelMap, queryCategory)) return queryCategory;
+
+    // Otherwise try to reverse-map display label -> canonical key.
+    const entry = Object.entries(categoryLabelMap).find(([, displayLabel]) => displayLabel === queryCategory);
+    return entry ? entry[0] : queryCategory;
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, loading } = useProducts();
 
@@ -74,8 +86,9 @@ const ProductsPage = () => {
         );
       } else if (category) {
         result = base;
-        if (category && category !== 'All') {
-          result = result.filter((p) => p.category === category);
+        const canonicalCategory = getCanonicalCategoryKeyFromQuery(category);
+        if (canonicalCategory && canonicalCategory !== 'All') {
+          result = result.filter((p) => p.category === canonicalCategory);
         }
 
         result = result.filter((p) => {
