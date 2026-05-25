@@ -48,22 +48,32 @@ export const sendCustomerOrderConfirmation = async (orderData) => {
     // Prepare email template variables
     const emailVariables = {
       to_email: customerEmail,
-      customer_name: customerName,
-      order_id: orderId,
+      customer_name: customerName || 'Customer',
+      order_id: orderId || 'N/A',
       order_date: orderData.orderDateFormatted || new Date(orderDate).toLocaleDateString('en-IN'),
-      product_name: productName || items.map((i) => i.name).join(', '),
-      quantity: quantity || items.reduce((sum, i) => sum + i.quantity, 0),
-      total_amount: totalAmount,
-      shipping_address: shippingAddress,
-      shipping_city: shippingCity,
-      shipping_state: shippingState,
-      shipping_pincode: shippingPincode,
+      product_name: productName || items.map((i) => i.name).join(', ') || 'N/A',
+      quantity: quantity || items.reduce((sum, i) => sum + i.quantity, 0) || '1',
+      total_amount: totalAmount || '0',
+      shipping_address: shippingAddress || 'N/A',
+      shipping_city: shippingCity || 'N/A',
+      shipping_state: shippingState || 'N/A',
+      shipping_pincode: shippingPincode || 'N/A',
       payment_method: paymentMethod || 'N/A',
       // HTML content for email body
       email_html: generateCustomerOrderHTML(orderData),
     };
 
+    console.log('📧 Sending customer email with variables:', {
+      to_email: emailVariables.to_email,
+      order_id: emailVariables.order_id,
+      customer_name: emailVariables.customer_name,
+    });
+
     const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID_CUSTOMER;
+    if (!templateId) {
+      throw new Error('Customer template ID not configured');
+    }
+
     const response = await sendEmail(templateId, emailVariables);
 
     console.log('✅ Customer confirmation email sent successfully:', response);
@@ -117,14 +127,14 @@ export const sendAdminOrderNotification = async (orderData, adminEmail) => {
     // Prepare email template variables
     const emailVariables = {
       to_email: adminEmail,
-      order_id: orderId,
+      order_id: orderId || 'N/A',
       order_date: orderData.orderDateFormatted || new Date(orderDate).toLocaleDateString('en-IN'),
       customer_name: customerName || 'N/A',
       customer_email: customerEmail || 'N/A',
       customer_phone: customerPhone || 'N/A',
-      product_name: productName || items.map((i) => i.name).join(', '),
-      quantity: quantity || items.reduce((sum, i) => sum + i.quantity, 0),
-      total_amount: totalAmount,
+      product_name: productName || items.map((i) => i.name).join(', ') || 'N/A',
+      quantity: quantity || items.reduce((sum, i) => sum + i.quantity, 0) || '1',
+      total_amount: totalAmount || '0',
       shipping_address: shippingAddress || 'N/A',
       shipping_city: shippingCity || 'N/A',
       shipping_state: shippingState || 'N/A',
@@ -134,7 +144,17 @@ export const sendAdminOrderNotification = async (orderData, adminEmail) => {
       email_html: generateAdminOrderHTML(orderData),
     };
 
+    console.log('📧 Sending admin email with variables:', {
+      to_email: emailVariables.to_email,
+      order_id: emailVariables.order_id,
+      customer_name: emailVariables.customer_name,
+    });
+
     const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID_ORDER;
+    if (!templateId) {
+      throw new Error('Admin template ID not configured');
+    }
+
     const response = await sendEmail(templateId, emailVariables);
 
     console.log('✅ Admin notification email sent successfully:', response);

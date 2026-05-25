@@ -59,18 +59,22 @@ export const sendEmail = async (templateId, variables) => {
       throw new Error('Template ID is required');
     }
 
+    if (!variables || typeof variables !== 'object') {
+      throw new Error('Template variables must be an object');
+    }
+
     const response = await emailjs.send(
       serviceId,
       templateId,
-      variables,
-      import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      variables
     );
 
     console.log('✅ Email sent successfully:', response);
     return response;
   } catch (error) {
-    console.error('❌ Failed to send email:', error);
-    throw new Error(`Email sending failed: ${error.message}`);
+    const errorMsg = error?.message || error?.text || JSON.stringify(error);
+    console.error('❌ Failed to send email:', errorMsg);
+    throw new Error(`Email sending failed: ${errorMsg}`);
   }
 };
 
