@@ -180,7 +180,7 @@ const HomePage = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="block lg:col-span-3"
             >
-              <div className="relative h-96 md:h-screen">
+              <div className="relative w-full aspect-[4/3]">
                 <div className="absolute -top-4 -left-4 w-96 h-96 bg-gold-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse-slow"></div>
                 <div className="absolute -bottom-4 -right-4 w-96 h-96 bg-luxury-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse-slow"></div>
                 
@@ -399,7 +399,7 @@ const HomePage = () => {
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Link>
             </div>
-            <div className="flex items-center justify-center relative h-96 md:h-screen-1/2">
+            <div className="flex items-center justify-center relative w-full aspect-[4/3]">
               <div className="relative w-full h-full overflow-hidden rounded-xl shadow-2xl">
                 {collectionImages.map((img, index) => (
                   <motion.img
