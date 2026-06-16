@@ -51,8 +51,10 @@
   }
 
   .nav-glow-link {
-    @apply relative inline-flex h-11 w-11 items-center justify-center rounded-full font-medium text-luxury-700 transition-all duration-300;
+    @apply relative inline-flex h-11 w-11 items-center justify-center rounded-full font-medium text-luxury-700 transition-all duration-500 ease-in-out;
+    background: rgba(245, 187, 71, 0.12);
     text-shadow: 0 0 0 rgba(219, 145, 45, 0);
+    transition-property: background, color, transform, box-shadow, text-shadow, opacity;
   }
 
   .nav-glow-link::before {
@@ -121,8 +123,10 @@
   }
 
   .mobile-nav-glow-link {
-    @apply relative flex min-w-0 items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium text-luxury-700 transition-all duration-300;
+    @apply relative flex min-w-0 items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium text-luxury-700 transition-all duration-500 ease-in-out;
+    background: rgba(245, 187, 71, 0.12);
     text-shadow: 0 0 0 rgba(219, 145, 45, 0);
+    transition-property: background, color, transform, box-shadow, text-shadow, opacity;
   }
 
   .mobile-nav-glow-link::before {

@@ -14,10 +14,10 @@ const Footer = () => {
               Discover exquisite necklace jewelry for every occasion. From Elite Series elegance to piercing glamour, we bring you the finest pieces.
             </p>
             <div className="flex space-x-4 mt-4">
-              <a href="https://www.instagram.com/panstellia" className="text-luxury-300 hover:text-gold-400 transition-colors">
+              <a href="https://www.instagram.com/panstellia" className="text-luxury-300 hover:text-gold-400 transition-colors" target="_blank" rel="noopener noreferrer">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-luxury-300 hover:text-gold-400 transition-colors">
+              <a href="https://www.facebook.com/people/Panstellia-PS/61581753914404/" className="text-luxury-300 hover:text-gold-400 transition-colors" target="_blank" rel="noopener noreferrer">
                 <Facebook className="w-5 h-5" />
               </a>
             </div>
@@ -110,11 +110,11 @@ const Footer = () => {
               </li>
               <li className="flex items-center text-luxury-300">
                 <Phone className="w-5 h-5 mr-2" />
-                <a href="tel:+917810032622" target="_blank" rel="noopener noreferrer" className="hover:text-gold-400 transition-colors">
+                <a href="tel:+917810032622" className="hover:text-gold-400 transition-colors">
                   +91 78100 32622
                 </a>
                 <span className="mx-2">|</span>
-                <a href="tel:+919080232622" target="_blank" rel="noopener noreferrer" className="hover:text-gold-400 transition-colors">
+                <a href="tel:+919080232622" className="hover:text-gold-400 transition-colors">
                   +91 90802 32622
                 </a>
               </li>
