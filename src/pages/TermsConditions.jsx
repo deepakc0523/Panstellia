@@ -123,7 +123,7 @@ const TermsConditionsPage = () => {
           <section className="border-t border-luxury-200 pt-8">
             <p className="text-sm text-luxury-500 mb-4">Questions? Contact us at <a href="mailto:support@panstellia.com" className="text-gold-600 hover:underline">support@panstellia.com</a></p>
             <Link 
-              to="/" 
+              to="/products" 
               className="inline-flex items-center gap-2 bg-gold-500 text-white px-8 py-3 rounded-xl font-medium hover:bg-gold-600 transition-all shadow-lg"
             >
               Continue Shopping

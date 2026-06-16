@@ -77,21 +77,6 @@ const discount = product.originalPrice
   }, [activeImageIndex, imageUrls.length]);
 
 
-  const productStatus = product.productStatus || 'available';
-
-  const statusBadge = (
-    <div
-      className={`absolute top-3 left-3 badge pointer-events-none ${
-        productStatus === 'available'
-          ? 'badge-success'
-          : productStatus === 'shipped'
-            ? 'badge-warning'
-            : 'badge-error'
-      }`}
-    >
-      {productStatus}
-    </div>
-  );
 
   return (
     <div
@@ -107,7 +92,6 @@ const discount = product.originalPrice
 
         {/* Image Container */}
         <Link to={`/product/${product.id}`} className="block relative overflow-hidden aspect-[4/5]">
-          {statusBadge}
           <img
             key={imageUrl}
             src={imageUrl}
@@ -138,6 +122,23 @@ const discount = product.originalPrice
               -{discount}%
             </div>
           )}
+
+          {/* Quick Add Button */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent translate-y-1 group-hover:translate-y-0 transition-transform duration-300 will-change-transform opacity-0 group-hover:opacity-100 z-20">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleAddToCart();
+              }}
+              disabled={isAdding}
+              type="button"
+              className="w-full bg-white text-luxury-900 py-2 rounded-lg font-medium flex items-center justify-center hover:bg-gold-50 transition-colors disabled:opacity-50"
+            >
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              {isAdding ? 'Adding...' : 'Add to Cart'}
+            </button>
+          </div>
         </Link>
         
         {/* Wishlist Button */}
@@ -150,26 +151,6 @@ const discount = product.originalPrice
         >
           <Heart className={`w-5 h-5 ${wishlisted ? 'fill-current' : ''}`} />
         </button>
-        
-        {/* Quick Add Button */}
-        <div
-          className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent translate-y-1 group-hover:translate-y-0 transition-transform duration-300 will-change-transform pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto z-20"
-        >
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={isAdding}
-            type="button"
-            className="w-full bg-white text-luxury-900 py-2 rounded-lg font-medium flex items-center justify-center hover:bg-gold-50 transition-colors disabled:opacity-50"
-          >
-
-            <ShoppingBag className="w-4 h-4 mr-2" />
-            {isAdding ? 'Adding...' : 'Quick Add'}
-          </button>
-        </div>
 
         {/* Content */}
         <Link to={`/product/${product.id}`} className="flex flex-1 flex-col p-4 hover:opacity-90 transition-opacity">

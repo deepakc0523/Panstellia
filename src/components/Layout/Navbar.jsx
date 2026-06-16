@@ -48,6 +48,10 @@ const Navbar = () => {
     }
   };
 
+  const closeSearch = () => {
+    setSearchOpen(false);
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -70,9 +74,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-white shadow-lg' : 'bg-transparent'
-    }`}>
+    <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -87,6 +89,7 @@ const Navbar = () => {
               <Link
                 key={to}
                 to={to}
+                onClick={closeSearch}
                 className={`nav-glow-link ${isActive ? 'nav-glow-link--active' : ''}`}
                 aria-label={label}
                 aria-current={isActive ? 'page' : undefined}
@@ -103,13 +106,14 @@ const Navbar = () => {
             {/* Search */}
             <button 
               onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 text-luxury-600 hover:text-gold-600 transition-colors"
+              className="p-2 rounded-full text-luxury-600 hover:text-gold-600 transition-colors"
+              style={{ background: 'rgba(245, 187, 71, 0.12)' }}
             >
               <Search className="w-5 h-5" />
             </button>
 
             {/* Wishlist */}
-            <Link to="/wishlist" className="p-2 text-luxury-600 hover:text-gold-600 transition-colors relative">
+            <Link to="/wishlist" onClick={closeSearch} className="p-2 rounded-full text-luxury-600 hover:text-gold-600 transition-colors relative" style={{ background: 'rgba(245, 187, 71, 0.12)' }}>
               <Heart className="w-5 h-5" />
               {wishlistItems.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -119,7 +123,7 @@ const Navbar = () => {
             </Link>
 
             {/* Cart */}
-            <Link to="/cart" className="p-2 text-luxury-600 hover:text-gold-600 transition-colors relative">
+            <Link to="/cart" onClick={closeSearch} className="p-2 rounded-full text-luxury-600 hover:text-gold-600 transition-colors relative" style={{ background: 'rgba(245, 187, 71, 0.12)' }}>
               <ShoppingBag className="w-5 h-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -131,7 +135,7 @@ const Navbar = () => {
             {/* User Menu */}
             {user ? (
               <div className="relative group">
-                <button className="p-2 text-luxury-600 hover:text-gold-600 transition-colors">
+                <button className="p-2 rounded-full text-luxury-600 hover:text-gold-600 transition-colors" style={{ background: 'rgba(245, 187, 71, 0.12)' }}>
                   <User className="w-5 h-5" />
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
@@ -158,15 +162,19 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <Link to="/login" className="p-2 text-luxury-600 hover:text-gold-600 transition-colors">
+              <Link to="/login" onClick={closeSearch} className="p-2 rounded-full text-luxury-600 hover:text-gold-600 transition-colors" style={{ background: 'rgba(245, 187, 71, 0.12)' }}>
                 <User className="w-5 h-5" />
               </Link>
             )}
 
             {/* Mobile Menu Toggle */}
             <button 
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 text-luxury-600"
+              onClick={() => {
+                closeSearch();
+                setIsOpen(!isOpen);
+              }}
+              className="md:hidden p-2 rounded-full text-luxury-600"
+              style={{ background: 'rgba(245, 187, 71, 0.12)' }}
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -222,7 +230,10 @@ const Navbar = () => {
                 to={to}
                 className={`mobile-nav-glow-link ${isActive ? 'mobile-nav-glow-link--active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  closeSearch();
+                  setIsOpen(false);
+                }}
               >
                 <Icon className="relative z-10 h-5 w-5 flex-shrink-0" />
                 <span className="relative z-10 truncate">{label}</span>

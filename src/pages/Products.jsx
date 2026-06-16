@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Filter, X, Grid, List } from 'lucide-react';
 import { useProducts } from '../context/ProductContext';
@@ -269,7 +270,12 @@ const ProductsPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-luxury-50 py-8">
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="min-h-screen bg-luxury-50 py-8"
+    >
       <SEOHelmet 
         title={`${filters.category !== 'All' ? getCategoryLabel(filters.category) : 'All'} Necklaces | Panstellia`}
         description={`Browse our ${filters.category !== 'All' ? getCategoryLabel(filters.category).toLowerCase() : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`}
@@ -393,7 +399,7 @@ const ProductsPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

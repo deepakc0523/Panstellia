@@ -14,10 +14,10 @@ const Footer = () => {
               Discover exquisite necklace jewelry for every occasion. From Elite Series elegance to piercing glamour, we bring you the finest pieces.
             </p>
             <div className="flex space-x-4 mt-4">
-              <a href="https://www.instagram.com/panstellia" className="text-luxury-300 hover:text-gold-400 transition-colors">
+              <a href="https://www.instagram.com/panstellia" className="text-luxury-300 hover:text-gold-400 transition-colors" target="_blank" rel="noopener noreferrer">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-luxury-300 hover:text-gold-400 transition-colors">
+              <a href="https://www.facebook.com/people/Panstellia-PS/61581753914404/" className="text-luxury-300 hover:text-gold-400 transition-colors" target="_blank" rel="noopener noreferrer">
                 <Facebook className="w-5 h-5" />
               </a>
             </div>
@@ -99,15 +99,35 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center text-luxury-300">
                 <MapPin className="w-5 h-5 mr-2" />
-                <span>9A, Indhira Nagar, Neyveli, Cuddlore, TamilNadu, India</span>
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=9A%2C%20Indhira%20Nagar%2C%20Neyveli%2C%20Cuddlore%2C%20TamilNadu%2C%20India"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gold-400 transition-colors"
+                >
+                  9A, Indhira Nagar, Neyveli, Cuddlore, TamilNadu, India
+                </a>
               </li>
               <li className="flex items-center text-luxury-300">
                 <Phone className="w-5 h-5 mr-2" />
-                <span>+91 78100 32622, +91 90802 32622</span>
+                <a href="tel:+917810032622" className="hover:text-gold-400 transition-colors">
+                  +91 78100 32622
+                </a>
+                <span className="mx-2">|</span>
+                <a href="tel:+919080232622" className="hover:text-gold-400 transition-colors">
+                  +91 90802 32622
+                </a>
               </li>
               <li className="flex items-center text-luxury-300">
                 <Mail className="w-5 h-5 mr-2" />
-                <span>support@panstellia.com</span>
+                <a
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=support@panstellia.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gold-400 transition-colors"
+                >
+                  support@panstellia.com
+                </a>
               </li>
             </ul>
           </div>
