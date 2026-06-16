@@ -13,7 +13,7 @@ const ProductCard = ({ product, priority = false }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  
+
   const wishlisted = isInWishlist(product.id);
 
   const handleAddToCart = async () => {
@@ -45,7 +45,7 @@ const ProductCard = ({ product, priority = false }) => {
     }
   };
 
-const discount = product.originalPrice 
+  const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
@@ -107,14 +107,13 @@ const discount = product.originalPrice
               {imageUrls.map((_, index) => (
                 <span
                   key={index}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    activeImageIndex === index ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
-                  }`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${activeImageIndex === index ? 'w-5 bg-white' : 'w-1.5 bg-white/55'
+                    }`}
                 />
               ))}
             </div>
           )}
-          
+
           {/* Discount Badge */}
 
           {discount > 0 && (
@@ -140,14 +139,13 @@ const discount = product.originalPrice
             </button>
           </div>
         </Link>
-        
+
         {/* Wishlist Button */}
         <button
           onClick={handleWishlist}
           type="button"
-          className={`absolute top-3 right-3 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center transition-transform duration-200 hover:scale-110 z-10 ${
-            wishlisted ? 'text-red-500' : 'text-luxury-400 hover:text-red-500'
-          }`}
+          className={`absolute top-3 right-3 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center transition-transform duration-200 hover:scale-110 z-10 ${wishlisted ? 'text-red-500' : 'text-luxury-400 hover:text-red-500'
+            }`}
         >
           <Heart className={`w-5 h-5 ${wishlisted ? 'fill-current' : ''}`} />
         </button>
@@ -158,23 +156,22 @@ const discount = product.originalPrice
           <p className="h-4 truncate text-xs text-gold-600 font-medium uppercase tracking-wider">
             {getCategoryLabel(product.category)}
           </p>
-          
+
           {/* Name */}
           <h3 className="mt-1 min-h-[2.75rem] text-luxury-900 font-medium leading-snug line-clamp-2 group-hover:text-gold-600 transition-colors">
             {product.name}
           </h3>
-          
+
           {/* Rating */}
           <div className="mt-2 flex h-5 items-center">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${
-                    i < Math.floor(product.ratings || 0)
+                  className={`w-4 h-4 ${i < Math.floor(product.ratings || 0)
                       ? 'fill-gold-400 text-gold-400'
                       : 'fill-luxury-200 text-luxury-200'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -182,7 +179,7 @@ const discount = product.originalPrice
               ({product.reviews || 0})
             </span>
           </div>
-          
+
           {/* Price */}
           <div className="mt-2 flex h-7 items-center gap-2 overflow-hidden">
             <span className="truncate text-lg font-semibold text-luxury-900">

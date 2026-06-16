@@ -182,7 +182,18 @@ const ProductDetailPage = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="w-full h-full object-contain transform will-change-transform group-hover:scale-[1.04] transition-transform duration-500"
+                  className="w-full h-full object-contain transform will-change-transform transition-transform duration-150 ease-out"
+                  style={
+                    isZooming
+                      ? {
+                          transform: 'scale(2.2)',
+                          transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`
+                        }
+                      : {
+                          transform: 'scale(1)',
+                          transformOrigin: 'center center'
+                        }
+                  }
                 />
               </AnimatePresence>
 
@@ -190,16 +201,6 @@ const ProductDetailPage = () => {
                 <div className="absolute top-4 left-4 badge badge-error text-lg px-4 py-2">
                   -{discount}% OFF
                 </div>
-              )}
-
-              {isZooming && (
-                <div
-                  className="hidden lg:block absolute z-20 w-44 h-44 -translate-x-1/2 -translate-y-1/2 border border-white/80 bg-white/35 shadow-[0_12px_40px_rgba(30,20,12,0.18)] backdrop-blur-[2px] pointer-events-none"
-                  style={{
-                    left: `${zoomPosition.x}%`,
-                    top: `${zoomPosition.y}%`
-                  }}
-                />
               )}
 
               {/* Navigation arrows */}
@@ -225,18 +226,6 @@ const ProductDetailPage = () => {
               {/* Luxury glass highlight */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-gradient-to-tr from-gold-500/10 via-transparent to-gold-600/10" />
             </div>
-
-            {isZooming && (
-              <div
-                className="hidden lg:block absolute left-[calc(100%+1.5rem)] top-0 z-30 w-[min(44vw,620px)] h-[calc(100dvh-26rem)] min-h-[420px] max-h-[620px] rounded-xl border border-luxury-100 bg-white shadow-2xl pointer-events-none"
-                style={{
-                  backgroundImage: `url(${imageUrl})`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: '240%',
-                  backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`
-                }}
-              />
-            )}
 
             <div className="flex gap-4 overflow-x-auto scrollbar-hide">
               {imageUrls.map((img, index) => {

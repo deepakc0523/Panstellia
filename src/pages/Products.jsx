@@ -36,13 +36,14 @@ const ProductsPage = () => {
   const sortByQuery = searchParams.get('sortBy') || 'newest';
   
   const [filters, setFilters] = useState({
-    category: categoryQuery || 'All',
+    categories: categoryQuery ? categoryQuery.split(',') : [],
     minPrice: minPriceQuery,
     maxPrice: maxPriceQuery,
-    sortBy: sortByQuery
+    sortBy: sortByQuery || 'newest',
+    inStockOnly: false
   });
 
-  const categories = ['All', 'Gold', 'Silver', 'Lux Wear', 'Party Wear', 'Elegant Spark'];
+  const categories = ['Gold', 'Silver', 'Lux Wear', 'Party Wear', 'Elegant Spark'];
   const sortOptions = [
     { value: 'newest', label: 'Newest' },
     { value: 'price-low', label: 'Price: Low to High' },
@@ -52,138 +53,141 @@ const ProductsPage = () => {
 
   useEffect(() => {
     setFilters((current) => {
-      const next = {
-        category: categoryQuery || 'All',
-        minPrice: minPriceQuery,
-        maxPrice: maxPriceQuery,
-        sortBy: sortByQuery
-      };
+      const nextCategories = categoryQuery ? categoryQuery.split(',') : [];
+      const categoriesEqual =
+        current.categories.length === nextCategories.length &&
+        current.categories.every((c) => nextCategories.includes(c));
 
       if (
-        current.category === next.category &&
-        current.minPrice === next.minPrice &&
-        current.maxPrice === next.maxPrice &&
-        current.sortBy === next.sortBy
+        categoriesEqual &&
+        current.minPrice === minPriceQuery &&
+        current.maxPrice === maxPriceQuery &&
+        current.sortBy === sortByQuery
       ) {
         return current;
       }
 
-      return next;
+      return {
+        ...current,
+        categories: nextCategories,
+        minPrice: minPriceQuery,
+        maxPrice: maxPriceQuery,
+        sortBy: sortByQuery || 'newest'
+      };
     });
   }, [categoryQuery, minPriceQuery, maxPriceQuery, sortByQuery]);
 
   useEffect(() => {
-    const search = searchQuery;
-    const category = categoryQuery;
+    let result = visibleProducts;
 
-    
-    let result;
-      const base = visibleProducts;
-      if (search) {
-        result = base.filter(
-          (p) =>
-            (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
-            (p.category || '').toLowerCase().includes(search.toLowerCase())
-        );
-      } else if (category) {
-        result = base;
-        const canonicalCategory = getCanonicalCategoryKeyFromQuery(category);
-        if (canonicalCategory && canonicalCategory !== 'All') {
-          result = result.filter((p) => p.category === canonicalCategory);
-        }
+    // Search Query
+    if (searchQuery) {
+      const term = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          (p.name || '').toLowerCase().includes(term) ||
+          (p.description || '').toLowerCase().includes(term) ||
+          (p.category || '').toLowerCase().includes(term)
+      );
+    }
 
-        result = result.filter((p) => {
-          if (filters.minPrice) return p.price >= Number(filters.minPrice);
-          return true;
+    // Category
+    if (filters.categories.length > 0) {
+      result = result.filter((p) => {
+        return filters.categories.some(cat => {
+          const canonical = getCanonicalCategoryKeyFromQuery(cat);
+          return p.category === canonical || p.category === cat;
         });
+      });
+    }
 
-        result = result.filter((p) => {
-          if (filters.maxPrice) return p.price <= Number(filters.maxPrice);
-          return true;
-        });
+    // Price filters
+    if (filters.minPrice) {
+      result = result.filter((p) => p.price >= Number(filters.minPrice));
+    }
+    if (filters.maxPrice) {
+      result = result.filter((p) => p.price <= Number(filters.maxPrice));
+    }
 
-        // Sort
-        const sorted = [...result];
-        switch (filters.sortBy) {
-          case 'price-low':
-            sorted.sort((a, b) => a.price - b.price);
-            break;
-          case 'price-high':
-            sorted.sort((a, b) => b.price - a.price);
-            break;
-          case 'rating':
-            sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
-            break;
-          case 'newest':
-            sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            break;
-          default:
-            break;
-        }
+    // Stock Filter
+    if (filters.inStockOnly) {
+      result = result.filter((p) => p.inStock);
+    }
 
-        result = sorted;
-      } else {
-        // Keep existing filterProducts behavior but scoped to visibleProducts
-        result = base;
-        if (filters.minPrice) {
-          result = result.filter((p) => p.price >= Number(filters.minPrice));
-        }
-        if (filters.maxPrice) {
-          result = result.filter((p) => p.price <= Number(filters.maxPrice));
-        }
+    // Sort
+    const sorted = [...result];
+    switch (filters.sortBy) {
+      case 'price-low':
+        sorted.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        sorted.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
+        break;
+      case 'newest':
+        sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        break;
+      default:
+        break;
+    }
+    result = sorted;
 
-        const sorted = [...result];
-        switch (filters.sortBy) {
-          case 'price-low':
-            sorted.sort((a, b) => a.price - b.price);
-            break;
-          case 'price-high':
-            sorted.sort((a, b) => b.price - a.price);
-            break;
-          case 'rating':
-            sorted.sort((a, b) => (b.ratings || 0) - (a.ratings || 0));
-            break;
-          case 'newest':
-            sorted.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            break;
-          default:
-            break;
-        }
-        result = sorted;
-      }
-
-    
     setFilteredProducts(result);
-  }, [products, filters, searchQuery, categoryQuery]);
+  }, [products, filters, searchQuery]);
 
-
+  const handleCategoryToggle = (category) => {
+    let updatedCategories;
+    if (filters.categories.includes(category)) {
+      updatedCategories = filters.categories.filter((c) => c !== category);
+    } else {
+      updatedCategories = [...filters.categories, category];
+    }
+    
+    setFilters((prev) => ({ ...prev, categories: updatedCategories }));
+    
+    const newParams = new URLSearchParams(searchParams);
+    if (updatedCategories.length > 0) {
+      newParams.set('category', updatedCategories.join(','));
+    } else {
+      newParams.delete('category');
+    }
+    setSearchParams(newParams);
+  };
 
   const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
+    setFilters((prev) => ({ ...prev, [key]: value }));
     
-    if (key === 'category' && value !== 'All') {
-      setSearchParams({ category: value });
-    } else if (key === 'category') {
-      setSearchParams({});
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set(key, value);
+    } else {
+      newParams.delete(key);
     }
+    setSearchParams(newParams);
+  };
+
+  const handleToggleStock = () => {
+    setFilters((prev) => ({ ...prev, inStockOnly: !prev.inStockOnly }));
   };
 
   const clearFilters = () => {
     setFilters({
-      category: 'All',
+      categories: [],
       minPrice: '',
       maxPrice: '',
-      sortBy: 'newest'
+      sortBy: 'newest',
+      inStockOnly: false
     });
     setSearchParams({});
   };
 
-  const activeFiltersCount = [
-    filters.category !== 'All',
-    filters.minPrice,
-    filters.maxPrice
-  ].filter(Boolean).length;
+  const activeFiltersCount = 
+    filters.categories.length + 
+    (filters.minPrice ? 1 : 0) + 
+    (filters.maxPrice ? 1 : 0) + 
+    (filters.inStockOnly ? 1 : 0);
 
   const renderFilterControls = ({ onClose } = {}) => (
     <>
@@ -212,25 +216,42 @@ const ProductsPage = () => {
 
       {/* Category */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-luxury-700 mb-2">Category</h3>
+        <h3 className="text-sm font-medium text-luxury-700 mb-2">Categories</h3>
         <div className="space-y-2">
           {categories.map(category => (
-            <label key={category} className="flex items-center">
+            <label key={category} className="flex items-center cursor-pointer select-none">
               <input
-                type="radio"
-                name="category"
-                checked={filters.category === category}
-                onChange={() => handleFilterChange('category', category)}
-                className="w-4 h-4 text-gold-600 border-luxury-300 focus:ring-gold-500"
+                type="checkbox"
+                checked={filters.categories.includes(category)}
+                onChange={() => handleCategoryToggle(category)}
+                className="w-4 h-4 rounded text-gold-600 border-luxury-300 focus:ring-gold-500 cursor-pointer"
               />
-              <span className="ml-2 text-sm text-luxury-600">{getCategoryLabel(category)}</span>
+              <span className="ml-2 text-sm text-luxury-600 hover:text-gold-600 transition-colors">
+                {getCategoryLabel(category)}
+              </span>
             </label>
           ))}
         </div>
       </div>
 
+      {/* Availability */}
+      <div className="mb-6 border-t border-luxury-100 pt-4">
+        <h3 className="text-sm font-medium text-luxury-700 mb-2">Availability</h3>
+        <label className="flex items-center cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={filters.inStockOnly}
+            onChange={handleToggleStock}
+            className="w-4 h-4 rounded text-gold-600 border-luxury-300 focus:ring-gold-500 cursor-pointer"
+          />
+          <span className="ml-2 text-sm text-luxury-600 hover:text-gold-600 transition-colors">
+            In Stock Only
+          </span>
+        </label>
+      </div>
+
       {/* Price Range */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-luxury-100 pt-4">
         <h3 className="text-sm font-medium text-luxury-700 mb-2">Price Range</h3>
         <div className="flex items-center gap-2">
           <input
@@ -252,12 +273,12 @@ const ProductsPage = () => {
       </div>
 
       {/* Sort */}
-      <div>
+      <div className="border-t border-luxury-100 pt-4">
         <h3 className="text-sm font-medium text-luxury-700 mb-2">Sort By</h3>
         <select
           value={filters.sortBy}
           onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-          className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-luxury-200 rounded-lg text-sm bg-white"
         >
           {sortOptions.map(option => (
             <option key={option.value} value={option.value}>
@@ -277,19 +298,23 @@ const ProductsPage = () => {
       className="min-h-screen bg-luxury-50 py-8"
     >
       <SEOHelmet 
-        title={`${filters.category !== 'All' ? getCategoryLabel(filters.category) : 'All'} Necklaces | Panstellia`}
-        description={`Browse our ${filters.category !== 'All' ? getCategoryLabel(filters.category).toLowerCase() : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`}
-        keywords={`${filters.category !== 'All' ? getCategoryLabel(filters.category).toLowerCase() + ' necklaces' : 'necklaces'}, jewelry, luxury jewelry`}
-        canonical={`https://panstellia.com/products${filters.category !== 'All' ? `?category=${filters.category}` : ''}`}
+        title={`${filters.categories.length === 1 ? getCategoryLabel(filters.categories[0]) : 'All'} Necklaces | Panstellia`}
+        description={`Browse our ${filters.categories.length > 0 ? filters.categories.map(c => getCategoryLabel(c)).join(', ') : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`}
+        keywords={`${filters.categories.length > 0 ? filters.categories.map(c => getCategoryLabel(c).toLowerCase()).join(', ') : 'necklaces'}, jewelry, luxury jewelry`}
+        canonical={`https://panstellia.com/products${filters.categories.length > 0 ? `?category=${filters.categories.join(',')}` : ''}`}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-luxury-900">
-            {filters.category !== 'All' ? getCategoryLabel(filters.category) : 'All Products'}
+            {filters.categories.length === 1 
+              ? getCategoryLabel(filters.categories[0]) 
+              : filters.categories.length > 1 
+                ? 'Filtered Collection' 
+                : 'All Products'}
           </h1>
           <p className="mt-2 text-luxury-600">
-            {filteredProducts.length} products found
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
           </p>
         </div>
 
@@ -360,6 +385,70 @@ const ProductsPage = () => {
             {/* Mobile Filters Overlay */}
             {showFilters && (
               <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setShowFilters(false)} />
+            )}
+
+            {/* Active Filters Chips */}
+            {activeFiltersCount > 0 && (
+              <div className="flex flex-wrap gap-2 mb-6 items-center">
+                <span className="text-xs text-luxury-500 font-medium">Active Filters:</span>
+                {filters.categories.map((cat) => (
+                  <div
+                    key={cat}
+                    className="flex items-center gap-1 bg-white border border-luxury-200 text-luxury-700 text-xs px-2.5 py-1 rounded-full shadow-sm animate-fade-in"
+                  >
+                    <span>{getCategoryLabel(cat)}</span>
+                    <button
+                      onClick={() => handleCategoryToggle(cat)}
+                      className="hover:text-red-500 transition-colors ml-1"
+                      aria-label={`Remove category filter ${getCategoryLabel(cat)}`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {filters.minPrice && (
+                  <div className="flex items-center gap-1 bg-white border border-luxury-200 text-luxury-700 text-xs px-2.5 py-1 rounded-full shadow-sm animate-fade-in">
+                    <span>Min: ₹{Number(filters.minPrice).toLocaleString()}</span>
+                    <button
+                      onClick={() => handleFilterChange('minPrice', '')}
+                      className="hover:text-red-500 transition-colors ml-1"
+                      aria-label="Remove minimum price filter"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {filters.maxPrice && (
+                  <div className="flex items-center gap-1 bg-white border border-luxury-200 text-luxury-700 text-xs px-2.5 py-1 rounded-full shadow-sm animate-fade-in">
+                    <span>Max: ₹{Number(filters.maxPrice).toLocaleString()}</span>
+                    <button
+                      onClick={() => handleFilterChange('maxPrice', '')}
+                      className="hover:text-red-500 transition-colors ml-1"
+                      aria-label="Remove maximum price filter"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                {filters.inStockOnly && (
+                  <div className="flex items-center gap-1 bg-white border border-luxury-200 text-luxury-700 text-xs px-2.5 py-1 rounded-full shadow-sm animate-fade-in">
+                    <span>In Stock Only</span>
+                    <button
+                      onClick={handleToggleStock}
+                      className="hover:text-red-500 transition-colors ml-1"
+                      aria-label="Remove in stock filter"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                <button
+                  onClick={clearFilters}
+                  className="text-xs text-gold-600 hover:text-gold-700 font-medium ml-2 hover:underline animate-fade-in"
+                >
+                  Clear all
+                </button>
+              </div>
             )}
 
             {/* Products */}
