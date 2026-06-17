@@ -77,7 +77,7 @@ const Navbar = () => {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-150 ease-out ${
         scrolled ? 'bg-white shadow-lg' : 'bg-transparent'
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className={`flex items-center justify-between transition-all duration-150 ease-out ${scrolled ? 'h-14' : 'h-20'}`}>
             {/* Logo */}
             <Link to="/" className="flex items-center md:gap-2">
@@ -154,7 +154,7 @@ const Navbar = () => {
             {/* Search & Icons */}
             <div className="flex items-center space-x-2 md:space-x-4">
               {/* Expandable Search Input (Desktop/Mobile) */}
-              <div className="relative flex items-center">
+              <div className="flex items-center">
                 <button 
                   onClick={() => setSearchOpen(!searchOpen)}
                   className="p-2 text-luxury-600 hover:text-gold-600 transition-colors"
@@ -181,7 +181,7 @@ const Navbar = () => {
 
                 {/* Autocomplete Card */}
                 {searchOpen && searchResults.length > 0 && (
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white shadow-2xl rounded-xl border border-luxury-100 p-2 z-50">
+                  <div className="absolute right-4 sm:right-6 lg:right-8 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 bg-white shadow-2xl rounded-xl border border-luxury-100 p-2 z-50">
                     {searchResults.map(product => (
                       <Link
                         key={product.id}
