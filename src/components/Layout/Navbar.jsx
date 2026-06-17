@@ -101,7 +101,7 @@ const Navbar = () => {
                         aria-label={label}
                       >
                         <Icon className="relative z-10 w-5 h-5" />
-                        <span className="nav-tooltip">{label}</span>
+                        {isActive ? <span className="nav-active-label">{label}</span> : <span className="nav-tooltip">{label}</span>}
                       </Link>
                       
                       {/* Mega Menu Dropdown */}
@@ -144,7 +144,8 @@ const Navbar = () => {
                     aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon className="relative z-10 w-5 h-5" />
-                    <span className="nav-tooltip">{label}</span>
+                    {isActive && <span className="nav-active-label">{label}</span>}
+                    {!isActive && <span className="nav-tooltip">{label}</span>}
                   </Link>
                 );
               })}
