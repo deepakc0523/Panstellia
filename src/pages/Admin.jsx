@@ -49,6 +49,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('products');
 
   const [orders, setOrders] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [imageUploadStatus, setImageUploadStatus] = useState('');
@@ -104,8 +105,25 @@ const AdminPage = () => {
 
   useEffect(() => {
     fetchOrders();
+    fetchFeedbacks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchFeedbacks = async () => {
+    try {
+      const feedbackRef = collection(db, 'customerFeedback');
+      const q = query(feedbackRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      const feedbacksData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setFeedbacks(feedbacksData);
+    } catch (error) {
+      console.error('Error fetching feedbacks:', error);
+      setFeedbacks([]);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -479,6 +497,16 @@ const AdminPage = () => {
                 }`}
               >
                 Reports
+              </button>
+              <button
+                onClick={() => setActiveTab('feedback')}
+                className={`py-4 border-b-2 font-medium ${
+                  activeTab === 'feedback'
+                    ? 'border-gold-500 text-gold-600'
+                    : 'border-transparent text-luxury-500 hover:text-luxury-700'
+                }`}
+              >
+                Customer Feedback
               </button>
             </nav>
           </div>
@@ -1237,6 +1265,91 @@ const AdminPage = () => {
 
             {activeTab === 'revenue' && <RevenueAdmin />}
             {activeTab === 'reports' && <ReportsAdmin />}
+
+            {activeTab === 'feedback' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-semibold text-luxury-900 text-xl">Customer Feedback</h2>
+                  <button
+                    onClick={fetchFeedbacks}
+                    className="text-sm px-4 py-2 bg-gold-500 text-white rounded-lg hover:bg-gold-600 transition-colors"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {feedbacks.length === 0 ? (
+                  <div className="text-center py-12 bg-luxury-50 rounded-lg">
+                    <p className="text-luxury-500">No customer feedback yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {feedbacks.map((feedback) => (
+                      <div
+                        key={feedback.id}
+                        className="bg-white border border-luxury-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-luxury-100">
+                          <div>
+                            <p className="text-xs text-luxury-500 font-semibold uppercase tracking-wide">Customer Name</p>
+                            <p className="text-luxury-900 font-medium mt-1">{feedback.customerName}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-luxury-500 font-semibold uppercase tracking-wide">Phone Number</p>
+                            <a
+                              href={`tel:${feedback.phoneNumber}`}
+                              className="text-gold-500 font-medium mt-1 hover:text-gold-600"
+                            >
+                              {feedback.phoneNumber}
+                            </a>
+                          </div>
+                          <div>
+                            <p className="text-xs text-luxury-500 font-semibold uppercase tracking-wide">City</p>
+                            <p className="text-luxury-900 font-medium mt-1">{feedback.city}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-luxury-500 font-semibold uppercase tracking-wide">Date</p>
+                            <p className="text-luxury-900 font-medium mt-1">
+                              {feedback.createdAt
+                                ? new Date(feedback.createdAt.toDate()).toLocaleDateString('en-IN')
+                                : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-luxury-500 font-semibold uppercase tracking-wide mb-2">Feedback</p>
+                          <p className="text-luxury-700 leading-relaxed whitespace-pre-wrap bg-luxury-50 p-4 rounded border border-luxury-100">
+                            {feedback.feedback}
+                          </p>
+                        </div>
+
+                        {feedback.status && (
+                          <div className="mt-4 flex items-center gap-2">
+                            <span className="text-xs text-luxury-500 font-semibold uppercase">Status:</span>
+                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                              feedback.status === 'new'
+                                ? 'bg-blue-100 text-blue-700'
+                                : feedback.status === 'read'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-green-100 text-green-700'
+                            }`}>
+                              {feedback.status.charAt(0).toUpperCase() + feedback.status.slice(1)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <strong>Total Feedback:</strong> {feedbacks.length} responses received
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
