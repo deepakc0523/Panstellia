@@ -227,10 +227,7 @@ const HomePage = () => {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="max-w-xl text-left"
           >
-            <div className="inline-flex items-center px-4 py-2 bg-gold-500/20 border border-gold-500/35 rounded-full text-gold-300 text-xs font-semibold uppercase tracking-wider mb-6">
-              <Sparkles className="w-3.5 h-3.5 mr-2 text-gold-400" />
-              New Collection 2026
-            </div>
+
             <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight">
               Wear Your Story
             </h1>
