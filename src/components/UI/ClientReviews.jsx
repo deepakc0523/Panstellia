@@ -91,28 +91,62 @@ const ClientReviews = () => {
     setCurrentIndex(index);
   };
 
-  const handleTouchStart = (e) => {
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = (e) => {
-    setTouchEnd(e.changedTouches[0].clientX);
-    handleSwipe();
-  };
-
   const handleSwipe = () => {
     if (!touchStart || !touchEnd) return;
     
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
+    const isLeftSwipe = distance > 30;
+    const isRightSwipe = distance < -30;
 
     if (isLeftSwipe) {
       handleNext();
     } else if (isRightSwipe) {
       handlePrev();
     }
+    
+    // Reset touch values
+    setTouchStart(0);
+    setTouchEnd(0);
   };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e) => {
+      setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = (e) => {
+      setTouchEnd(e.changedTouches[0].clientX);
+      
+      // Use setTimeout to ensure state is updated
+      setTimeout(() => {
+        const startPos = e.currentTarget === container ? touchStart : e.targetTouches?.[0]?.clientX || 0;
+        const endPos = e.changedTouches[0].clientX;
+        
+        if (startPos && endPos) {
+          const distance = startPos - endPos;
+          const isLeftSwipe = distance > 30;
+          const isRightSwipe = distance < -30;
+
+          if (isLeftSwipe) {
+            handleNext();
+          } else if (isRightSwipe) {
+            handlePrev();
+          }
+        }
+      }, 0);
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, false);
+    container.addEventListener('touchend', handleTouchEnd, false);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [touchStart, touchEnd]);
 
   const getVisibleReviews = () => {
     const startIdx = currentIndex * itemsPerView;
@@ -151,8 +185,6 @@ const ClientReviews = () => {
           <div 
             ref={containerRef}
             className="overflow-hidden flex-1 max-w-4xl w-full"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
           >
             <motion.div
               className="flex gap-4 sm:gap-6 md:gap-8 px-2 sm:px-0"
