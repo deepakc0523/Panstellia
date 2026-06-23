@@ -24,9 +24,9 @@ const AboutUsPage = () => {
   ];
 
   const testimonials = [
-    { text: 'Panstellia made my wedding magical!', author: 'Priya R.', rating: 5 },
+    { text: 'Panstellia made my wedding magical!', author: 'Priya R.', rating: 3 },
     { text: 'Heirloom quality, fast delivery.', author: 'Rahul K.', rating: 5 },
-    { text: 'Exceeded expectations completely.', author: 'Anita S.', rating: 5 }
+    { text: 'Exceeded expectations completely.', author: 'Anita S.', rating: 4 }
   ];
 
   return (
@@ -39,7 +39,7 @@ const AboutUsPage = () => {
       />
 
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://i.ibb.co/B5Ws7Gfk/AI-Generated-Image-2026-06-23.jpg')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-[url('https://i.ibb.co/7dMyTQSh/AI-Generated-Image-2026-06-23.jpg')] bg-cover bg-center"></div>
         <div className="absolute inset-0 bg-gradient-to-br from-luxury-950/40 via-luxury-900/20 to-transparent"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.16),_transparent_35%)] pointer-events-none"></div>
 
