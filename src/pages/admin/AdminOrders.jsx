@@ -290,13 +290,21 @@ export default function AdminOrders() {
         // Restore stock via transaction
         if (data.items?.length) {
           await runTransaction(db, async (tx) => {
+            const snaps = [];
             for (const item of data.items) {
               const ref = doc(db, 'products', item.id);
               const pSnap = await tx.get(ref);
-              if (pSnap.exists()) {
-                const pd = pSnap.data();
+              snaps.push({ ref, snap: pSnap, item });
+            }
+
+            for (const { ref, snap, item } of snaps) {
+              if (snap.exists()) {
+                const pd = snap.data();
                 const newStock = Number(pd.stockQuantity || 0) + Number(item.quantity || 0);
-                tx.update(ref, { stockQuantity: newStock, availableQuantity: newStock - Number(pd.reservedQuantity || 0) });
+                tx.update(ref, { 
+                  stockQuantity: newStock, 
+                  availableQuantity: newStock - Number(pd.reservedQuantity || 0) 
+                });
               }
             }
           });

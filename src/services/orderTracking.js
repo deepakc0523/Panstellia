@@ -157,6 +157,26 @@ export async function updateOrderStatus(orderId, newStatus, adminUser, note = ''
     updates.priority = detectAutoPriority(orderData);
   }
 
+  // Handle COD payment status on delivery
+  if (newStatus === 'delivered' && (orderData.paymentStatus || '').toLowerCase() === 'pending') {
+    updates.paymentStatus = 'Paid';
+    
+    // Also update the corresponding payment document if it exists
+    try {
+      const paymentsRef = collection(db, 'payments');
+      const q = query(paymentsRef, where('orderDocId', '==', orderId), limit(1));
+      const paySnap = await getDocs(q);
+      if (!paySnap.empty) {
+        await updateDoc(paySnap.docs[0].ref, {
+          paymentStatus: 'Paid',
+          updatedAt: new Date().toISOString()
+        });
+      }
+    } catch(err) {
+      console.error('Failed to update payment doc status on delivery', err);
+    }
+  }
+
   await updateDoc(orderRef, updates);
 
   // Write detailed log in fulfillmentLogs (Phase 14 & 16)

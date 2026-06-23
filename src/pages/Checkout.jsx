@@ -311,17 +311,22 @@ const CheckoutPage = () => {
   const rollbackReservations = async (items) => {
     try {
       await runTransaction(db, async (transaction) => {
+        const snaps = [];
         for (const item of items) {
           const productRef = doc(db, 'products', item.id);
           const productSnap = await transaction.get(productRef);
-          if (productSnap.exists()) {
-            const pData = productSnap.data();
+          snaps.push({ ref: productRef, snap: productSnap, item });
+        }
+        
+        for (const { ref, snap, item } of snaps) {
+          if (snap.exists()) {
+            const pData = snap.data();
             const oldStock = Number(pData.stockQuantity ?? 0);
             const oldReserved = Number(pData.reservedQuantity ?? 0);
             const newReserved = Math.max(0, oldReserved - item.quantity);
             const newAvailable = oldStock - newReserved;
             
-            transaction.update(productRef, {
+            transaction.update(ref, {
               reservedQuantity: newReserved,
               availableQuantity: newAvailable,
               lastStockUpdate: new Date().toISOString(),
@@ -365,16 +370,46 @@ const CheckoutPage = () => {
 
           // Run transaction to check/deduct stock and save order/payment
           await runTransaction(db, async (transaction) => {
-            const productDocs = [];
+            // 1. READ PHASE: Execute ALL reads concurrently before any writes
+            const readPromises = [];
             
-            // 1. Read all product docs to verify stock
+            // Read products
             for (const item of cartItems) {
               const productRef = doc(db, 'products', item.id);
-              const productSnap = await transaction.get(productRef);
-              if (!productSnap.exists()) {
-                throw new Error(`Product "${item.name}" not found.`);
+              readPromises.push(
+                transaction.get(productRef).then(snap => {
+                  if (!snap.exists()) {
+                    throw new Error(`Product "${item.name}" not found.`);
+                  }
+                  return { type: 'product', ref: productRef, snap, item };
+                })
+              );
+            }
+
+            // Read coupon
+            let couponRef = null;
+            if (appliedCoupon) {
+              couponRef = doc(db, 'offers', appliedCoupon.code);
+              readPromises.push(
+                transaction.get(couponRef).then(snap => {
+                  return { type: 'coupon', ref: couponRef, snap };
+                })
+              );
+            }
+
+            const readResults = await Promise.all(readPromises);
+            
+            const productDocs = readResults.filter(r => r.type === 'product');
+            const couponResult = readResults.find(r => r.type === 'coupon');
+            const couponSnap = couponResult ? couponResult.snap : null;
+
+            if (couponSnap && couponSnap.exists()) {
+              const cData = couponSnap.data();
+              const curUses = Number(cData.currentUses || 0);
+              const mUses = Number(cData.maxUses || 100);
+              if (curUses >= mUses) {
+                throw new Error("Coupon usage limit has been reached since you applied it.");
               }
-              productDocs.push({ ref: productRef, snap: productSnap, item });
             }
 
             // 2. Validate availability
@@ -483,20 +518,12 @@ const CheckoutPage = () => {
             transaction.set(orderDocRef, commonOrderData);
 
             // Update coupon uses if applied
-            if (appliedCoupon) {
-              const couponRef = doc(db, 'offers', appliedCoupon.code);
-              const couponSnap = await transaction.get(couponRef);
-              if (couponSnap.exists()) {
-                const cData = couponSnap.data();
-                const curUses = Number(cData.currentUses || 0);
-                const mUses = Number(cData.maxUses || 100);
-                if (curUses >= mUses) {
-                  throw new Error("Coupon usage limit has been reached since you applied it.");
-                }
-                transaction.update(couponRef, {
-                  currentUses: curUses + 1
-                });
-              }
+            if (appliedCoupon && couponSnap && couponSnap.exists()) {
+              const cData = couponSnap.data();
+              const curUses = Number(cData.currentUses || 0);
+              transaction.update(couponRef, {
+                currentUses: curUses + 1
+              });
             }
 
             // Order notification write inside transaction
@@ -742,11 +769,32 @@ const CheckoutPage = () => {
             const razorpayOrderId = order_number || response.razorpay_order_id;
             // Deduct stock client-side first
             await runTransaction(db, async (transaction) => {
+              // READ PHASE
+              const readPromises = [];
               for (const item of cartItemsSnapshot) {
                 const productRef = doc(db, 'products', item.id);
-                const productSnap = await transaction.get(productRef);
-                if (productSnap.exists()) {
-                  const pData = productSnap.data();
+                readPromises.push(
+                  transaction.get(productRef).then(snap => ({ type: 'product', ref: productRef, snap, item }))
+                );
+              }
+
+              let couponRef = null;
+              if (appliedCoupon) {
+                couponRef = doc(db, 'offers', appliedCoupon.code);
+                readPromises.push(
+                  transaction.get(couponRef).then(snap => ({ type: 'coupon', ref: couponRef, snap }))
+                );
+              }
+
+              const readResults = await Promise.all(readPromises);
+              const productDocs = readResults.filter(r => r.type === 'product');
+              const couponResult = readResults.find(r => r.type === 'coupon');
+              const couponSnap = couponResult ? couponResult.snap : null;
+
+              // Apply stock updates and log
+              for (const { ref, snap, item } of productDocs) {
+                if (snap.exists()) {
+                  const pData = snap.data();
                   const oldStock = Number(pData.stockQuantity ?? 0);
                   const oldReserved = Number(pData.reservedQuantity ?? 0);
                   const newStock = Math.max(0, oldStock - item.quantity);
@@ -760,7 +808,7 @@ const CheckoutPage = () => {
                     inventoryStatus = 'low_stock';
                   }
 
-                  transaction.update(productRef, {
+                  transaction.update(ref, {
                     stockQuantity: newStock,
                     reservedQuantity: newReserved,
                     availableQuantity: newAvailable,
@@ -802,15 +850,11 @@ const CheckoutPage = () => {
               }
 
               // Update coupon uses inside transaction if applied
-              if (appliedCoupon) {
-                const couponRef = doc(db, 'offers', appliedCoupon.code);
-                const couponSnap = await transaction.get(couponRef);
-                if (couponSnap.exists()) {
-                  const cData = couponSnap.data();
-                  transaction.update(couponRef, {
-                    currentUses: Number(cData.currentUses || 0) + 1
-                  });
-                }
+              if (appliedCoupon && couponSnap && couponSnap.exists()) {
+                const cData = couponSnap.data();
+                transaction.update(couponRef, {
+                  currentUses: Number(cData.currentUses || 0) + 1
+                });
               }
 
               // Order notification write inside transaction
