@@ -23,6 +23,12 @@ try {
 const defaultAllowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5175",
+  "http://localhost:5176",
+  "http://127.0.0.1:5176",
   "https://panstellia.vercel.app",
   "https://panstellia.com",
   "https://www.panstellia.com",
@@ -411,6 +417,8 @@ async function createOrderHandler(req, res) {
         subtotal: toNumber(totals.subtotal),
         shipping: toNumber(totals.shipping),
         tax: toNumber(totals.tax),
+        couponCode: totals.couponCode || null,
+        couponDiscount: totals.couponDiscount ? toNumber(totals.couponDiscount) : 0,
         total: totals.total ? toNumber(totals.total) : amountNum / 100,
         amount: amountNum,
         amountPaid: amountNum / 100,
@@ -575,25 +583,31 @@ async function verifyPaymentHandler(req, res) {
         };
       }
 
-      // Deduct stock for each item
+      const productDocs = [];
       for (const item of pData.items) {
         const productRef = db.collection("products").doc(item.id);
         const productSnap = await transaction.get(productRef);
         if (productSnap.exists) {
-          const prodData = productSnap.data();
-          const oldStock = Number(prodData.stockQuantity ?? 0);
-          const oldReserved = Number(prodData.reservedQuantity ?? 0);
+          productDocs.push({ ref: productRef, snap: productSnap, item });
+        }
+      }
 
-          const newStock = Math.max(0, oldStock - item.quantity);
-          const newReserved = Math.max(0, oldReserved - item.quantity);
-          const newAvailable = newStock - newReserved;
+      // Deduct stock for each item
+      for (const { ref, snap, item } of productDocs) {
+        const prodData = snap.data();
+        const oldStock = Number(prodData.stockQuantity ?? 0);
+        const oldReserved = Number(prodData.reservedQuantity ?? 0);
 
-          let inventoryStatus = 'in_stock';
-          if (newStock <= 0) {
-            inventoryStatus = 'out_of_stock';
-          } else if (newStock <= Number(prodData.reorderThreshold ?? 5)) {
-            inventoryStatus = 'low_stock';
-          }
+        const newStock = Math.max(0, oldStock - item.quantity);
+        const newReserved = Math.max(0, oldReserved - item.quantity);
+        const newAvailable = newStock - newReserved;
+
+        let inventoryStatus = 'in_stock';
+        if (newStock <= 0) {
+          inventoryStatus = 'out_of_stock';
+        } else if (newStock <= Number(prodData.reorderThreshold ?? 5)) {
+          inventoryStatus = 'low_stock';
+        }
 
           transaction.update(productRef, {
             stockQuantity: newStock,
@@ -707,24 +721,29 @@ async function markPaymentFailedHandler(req, res) {
 
       // Only release if it was still in pending_payment status
       if (pData.status === "pending_payment") {
+        const productDocs = [];
         for (const item of pData.items) {
           const productRef = db.collection("products").doc(item.id);
           const productSnap = await transaction.get(productRef);
           if (productSnap.exists) {
-            const prodData = productSnap.data();
-            const oldStock = Number(prodData.stockQuantity ?? 0);
-            const oldReserved = Number(prodData.reservedQuantity ?? 0);
-
-            const newReserved = Math.max(0, oldReserved - item.quantity);
-            const newAvailable = oldStock - newReserved;
-
-            transaction.update(productRef, {
-              reservedQuantity: newReserved,
-              availableQuantity: newAvailable,
-              lastStockUpdate: new Date().toISOString(),
-              stockUpdatedBy: 'System (Failed Payment Release)',
-            });
+            productDocs.push({ ref: productRef, snap: productSnap, item });
           }
+        }
+
+        for (const { ref, snap, item } of productDocs) {
+          const prodData = snap.data();
+          const oldReserved = Number(prodData.reservedQuantity ?? 0);
+          const oldStock = Number(prodData.stockQuantity ?? 0);
+
+          const newReserved = Math.max(0, oldReserved - item.quantity);
+          const newAvailable = oldStock - newReserved;
+
+          transaction.update(ref, {
+            reservedQuantity: newReserved,
+            availableQuantity: newAvailable,
+            lastStockUpdate: new Date().toISOString(),
+            stockUpdatedBy: 'System (Failed Payment Release)',
+          });
         }
 
         const failedUpdate = {

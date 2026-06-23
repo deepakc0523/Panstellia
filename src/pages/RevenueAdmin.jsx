@@ -132,16 +132,21 @@ export default function RevenueAdmin() {
           return sum;
         }, 0);
 
-        // Fetch delivered paid orders (online payments) and add to revenue
+        // Fetch delivered paid orders and add to revenue
         const ordersRef = collection(db, 'orders');
         const deliveredQ = query(
           ordersRef,
           where('status', '==', 'delivered'),
-          where('paymentStatus', '==', 'paid'),
           limit(500)
         );
         const snapOrders = await getDocs(deliveredQ);
-        const deliveredOrders = snapOrders.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Only count those where paymentStatus is Paid or Partially Paid (case-insensitive)
+        const deliveredOrders = snapOrders.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(o => {
+             const statusStr = (o.paymentStatus || '').toLowerCase();
+             return statusStr === 'paid' || statusStr === 'partially paid';
+          });
         const deliveredRevenue = deliveredOrders.reduce((sum, o) => sum + Number(o.total || o.amount || 0), 0);
         const totalRevenueWithOrders = totalRevenue + deliveredRevenue;
 
