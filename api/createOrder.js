@@ -17,10 +17,14 @@ function isRazorpayAuthError(error) {
 }
 
 function getRazorpayClient() {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  let keyId = process.env.RAZORPAY_KEY_ID;
+  let keySecret = process.env.RAZORPAY_KEY_SECRET;
 
   if (!keyId || !keySecret) return null;
+
+  // Trim whitespace and remove surrounding quotes
+  keyId = keyId.trim().replace(/^"|"$/g, '');
+  keySecret = keySecret.trim().replace(/^"|"$/g, '');
 
   return new Razorpay({
     key_id: keyId,
@@ -308,9 +312,10 @@ export default async function handler(req, res) {
     const statusCode = error?.statusCode || 500;
 
     if (isRazorpayAuthError(error)) {
+      const detailedMessage = error?.error?.description || error?.message || "";
       return res.status(401).json({
         error:
-          "Razorpay authentication failed. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are from the same Razorpay key pair, then redeploy functions.",
+          `Razorpay authentication failed: ${detailedMessage}. Check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are from the same Razorpay key pair, and have no spaces or quotes, then redeploy functions.`,
       });
     }
 

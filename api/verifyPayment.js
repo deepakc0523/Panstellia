@@ -58,8 +58,15 @@ export default async function handler(req, res) {
       });
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    const keyId = process.env.RAZORPAY_KEY_ID;
+    let keySecret = process.env.RAZORPAY_KEY_SECRET;
+    let keyId = process.env.RAZORPAY_KEY_ID;
+
+    if (keySecret) {
+      keySecret = keySecret.trim().replace(/^"|"$/g, '');
+    }
+    if (keyId) {
+      keyId = keyId.trim().replace(/^"|"$/g, '');
+    }
 
     if (!keySecret) {
       console.error("[api/verifyPayment] RAZORPAY_KEY_SECRET not configured");
