@@ -10,8 +10,12 @@ import {
   Hash,
   ShieldCheck,
   Navigation,
+  CreditCard as PayIcon,
+  X as CancelIcon,
+  AlertTriangle,
 } from 'lucide-react';
-import { collection, doc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { toast } from 'react-toastify';
 
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
@@ -19,6 +23,7 @@ import SEOHelmet from '../utils/seoHelmet';
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 import OrderTimeline, { StatusBadge } from '../components/UI/OrderTimeline';
 import { subscribeToOrder } from '../services/orderTracking';
+import { openCheckout, verifyPayment } from '../services/payment';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -83,6 +88,7 @@ const OrderDetailsPage = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -157,6 +163,107 @@ const OrderDetailsPage = () => {
 
   const rawStatus = order?.status || 'processing';
   const isCancelled = rawStatus.toLowerCase().trim() === 'cancelled';
+
+  // Show Pay Now / Cancel Order when payment is pending and order is not terminal
+  const isRazorpayPending =
+    (order?.paymentMethod || '').toLowerCase() === 'razorpay' &&
+    (order?.paymentStatus || '').toLowerCase() === 'pending' &&
+    !isCancelled &&
+    rawStatus.toLowerCase() !== 'delivered';
+
+  // ── Pay Now handler ───────────────────────────────────────────────────────
+  const handlePayNow = async () => {
+    if (!order || !user) return;
+    setActionLoading(true);
+    try {
+      const authToken = await user.getIdToken();
+      // The razorpay_order_id is stored on the order as `orderId` (the Razorpay order_id)
+      const razorpayOrderId = order.razorpay_order_id || order.orderId || '';
+      const amountPaise = Math.round(Number(order.total || 0) * 100);
+
+      if (!razorpayOrderId) {
+        toast.error('Payment details not found. Please contact support.');
+        setActionLoading(false);
+        return;
+      }
+
+      await openCheckout({
+        amount: amountPaise,
+        currency: 'INR',
+        name: 'Panstellia',
+        description: `Payment for Order #${order.id.slice(0, 8).toUpperCase()}`,
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=200',
+        order_id: razorpayOrderId,
+        prefill: {
+          name: order.customerName || order.name || '',
+          email: order.email || order.customerEmail || '',
+          contact: order.phone || order.customerPhone || '',
+        },
+        theme: { color: '#db912d' },
+        onSuccess: async (response) => {
+          try {
+            const result = await verifyPayment(
+              response.razorpay_payment_id,
+              response.razorpay_order_id,
+              response.razorpay_signature,
+              { authToken }
+            );
+            if (result.verified) {
+              toast.success('Payment successful! Your order is confirmed.');
+            } else {
+              toast.error('Payment verification failed. Please contact support.');
+            }
+          } catch (err) {
+            toast.error('Payment verification failed. Please contact support.');
+            console.error('Pay Now verification error:', err);
+          } finally {
+            setActionLoading(false);
+          }
+        },
+        onFailure: () => {
+          toast.error('Payment failed. Please try again.');
+          setActionLoading(false);
+        },
+        onDismiss: () => {
+          toast.info('Payment cancelled.');
+          setActionLoading(false);
+        },
+      });
+    } catch (err) {
+      toast.error(err.message || 'Unable to open payment. Please try again.');
+      setActionLoading(false);
+    }
+  };
+
+  // ── Cancel Order handler ──────────────────────────────────────────────────
+  const handleCancelOrder = async () => {
+    if (!order || !user) return;
+    if (!window.confirm('Are you sure you want to cancel this order? This cannot be undone.')) return;
+    setActionLoading(true);
+    try {
+      const orderRef = doc(db, 'orders', order.id);
+      await updateDoc(orderRef, { status: 'cancelled', paymentStatus: 'Cancelled' });
+
+      // Also update linked payment document if present
+      try {
+        const paymentsRef = collection(db, 'payments');
+        const q = query(paymentsRef, where('orderDocId', '==', order.id));
+        const snap = await getDocs(q);
+        for (const d of snap.docs) {
+          await updateDoc(doc(db, 'payments', d.id), { paymentStatus: 'Cancelled' });
+        }
+      } catch (payErr) {
+        console.warn('Could not update payment document:', payErr);
+      }
+
+      toast.success('Order cancelled successfully.');
+    } catch (err) {
+      toast.error('Failed to cancel order. Please try again.');
+      console.error('Cancel order error:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const calculatedSubtotal = (order?.items || []).reduce(
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
@@ -322,6 +429,44 @@ const OrderDetailsPage = () => {
                     No mapping, no transformation.
                   */}
                   <OrderTimeline status={rawStatus} statusHistory={order?.statusHistory || []} />
+                </div>
+              </div>
+            )}
+
+            {/* ── Pending Payment Notice + Actions ──────────────────────── */}
+            {isRazorpayPending && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-800">Payment Pending</p>
+                    <p className="text-sm text-amber-600 mt-0.5">
+                      Your order is placed but payment has not been completed. You
+                      can complete payment now or cancel this order.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handlePayNow}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gold-500 hover:bg-gold-600 text-white text-sm font-bold rounded-xl transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    {actionLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <PayIcon className="w-4 h-4" />
+                    )}
+                    Pay Now
+                  </button>
+                  <button
+                    onClick={handleCancelOrder}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 hover:bg-red-50 text-sm font-bold rounded-xl transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <CancelIcon className="w-4 h-4" />
+                    Cancel Order
+                  </button>
                 </div>
               </div>
             )}

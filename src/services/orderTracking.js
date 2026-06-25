@@ -15,7 +15,7 @@ import {
   doc, collection, addDoc, updateDoc, writeBatch,
   onSnapshot, query, orderBy, limit,
   serverTimestamp, arrayUnion,
-  getDoc, where,
+  getDoc, where, getDocs,
 } from 'firebase/firestore';
 import { isValidTransition, isHighValueOrder, detectAutoPriority } from './orderStatus';
 import { logActivity, LOG_ACTIONS, LOG_MODULES, LOG_STATUS, buildAdminInfo } from './activityLogger';
@@ -50,7 +50,20 @@ export function subscribeToOrder(orderId, callback) {
 }
 
 /**
+ * Parse a Firestore Timestamp or ISO string to a JS Date.
+ * Returns null if the value is missing or invalid.
+ */
+function parseDate(value) {
+  if (!value) return null;
+  if (typeof value?.toDate === 'function') return value.toDate();
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Subscribe to all orders (admin) with real-time updates.
+ * Always delivers orders sorted latest-first regardless of
+ * whether `createdAt` is a Firestore Timestamp or an ISO string.
  * @param {function} callback - called with (orders[], error | null)
  * @param {{ limitCount?: number }} options
  * @returns {function} unsubscribe
@@ -66,6 +79,20 @@ export function subscribeToAllOrders(callback, options = {}) {
     q,
     (snap) => {
       const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Client-side sort: Firestore's orderBy only works correctly when all
+      // documents store `createdAt` as the same type. Because Razorpay orders
+      // use ISO strings and COD orders may use Firestore Timestamps, we
+      // re-sort here to guarantee latest-first across all order types.
+      orders.sort((a, b) => {
+        const da = parseDate(a.createdAt);
+        const db_ = parseDate(b.createdAt);
+        if (da && db_) return db_ - da;   // both valid — compare directly
+        if (da) return -1;                 // a has date, b doesn't → a first
+        if (db_) return 1;                 // b has date, a doesn't → b first
+        return 0;
+      });
+
       callback(orders, null);
     },
     (error) => {

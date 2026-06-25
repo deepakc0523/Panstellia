@@ -484,7 +484,7 @@ export default function AdminOrders() {
               <span className="text-xs font-bold text-luxury-500 uppercase tracking-wider w-28 hidden md:block">Customer</span>
               <span className="text-xs font-bold text-luxury-500 uppercase tracking-wider w-24 hidden lg:block">Total</span>
               <span className="text-xs font-bold text-luxury-500 uppercase tracking-wider w-32 hidden sm:block">Status</span>
-              <span className="text-xs font-bold text-luxury-500 uppercase tracking-wider w-20 hidden xl:block">Date</span>
+              <span className="text-xs font-bold text-luxury-500 uppercase tracking-wider w-24">Date</span>
               <span className="text-xs font-bold text-luxury-500 uppercase tracking-wider w-16 text-right">Actions</span>
             </div>
 
@@ -560,9 +560,14 @@ export default function AdminOrders() {
                         <StatusBadge status={order.status} />
                       </div>
 
-                      {/* Date */}
-                      <div className="w-20 hidden xl:block">
-                        <p className="text-xs text-luxury-500">{timeAgo(date)}</p>
+                      {/* Date — always visible, top right */}
+                      <div className="w-24 text-right">
+                        <p className="text-xs font-medium text-luxury-500">{timeAgo(date)}</p>
+                        {date && (
+                          <p className="text-[10px] text-luxury-400 mt-0.5">
+                            {date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          </p>
+                        )}
                       </div>
 
                       {/* Actions */}

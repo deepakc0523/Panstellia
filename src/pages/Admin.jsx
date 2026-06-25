@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Edit, Trash2, DollarSign, ShoppingBag, BarChart3 } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, DollarSign, ShoppingBag, BarChart3, Search, Clock } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { useProducts } from '../context/ProductContext';
@@ -14,6 +14,19 @@ import {
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
+
+// ── Admin-side helper to parse both Firestore Timestamp and ISO strings ──────
+function safeToDate(value) {
+  try {
+    if (!value) return null;
+    if (typeof value?.toDate === 'function') return value.toDate();
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  } catch {
+    return null;
+  }
+}
+
 import { getOptimizedImageUrl } from '../utils/imageUtils';
 import { getCategoryLabel } from '../utils/categoryLabels';
 import RevenueAdmin from './RevenueAdmin';
@@ -50,6 +63,9 @@ const AdminPage = () => {
 
   const [orders, setOrders] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsSearch, setPaymentsSearch] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [imageUploadStatus, setImageUploadStatus] = useState('');
@@ -137,6 +153,17 @@ const AdminPage = () => {
         id: doc.id,
         ...doc.data(),
       }));
+      // Client-side sort as safety net: some orders store createdAt as an ISO
+      // string (Razorpay flow) while others store a Firestore Timestamp (COD).
+      // Firestore orderBy only sorts Timestamps correctly, so we re-sort here.
+      ordersData.sort((a, b) => {
+        const da = safeToDate(a.createdAt);
+        const db_ = safeToDate(b.createdAt);
+        if (da && db_) return db_ - da;
+        if (da) return -1;
+        if (db_) return 1;
+        return 0;
+      });
       setOrders(ordersData);
     } catch (error) {
       setOrders([
@@ -150,6 +177,7 @@ const AdminPage = () => {
       ]);
     }
   };
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -386,6 +414,42 @@ const AdminPage = () => {
     }
   };
 
+  // ── Fetch payments for Payments tab ──────────────────────────────────────
+  const fetchPayments = async () => {
+    setPaymentsLoading(true);
+    try {
+      const q = query(collection(db, 'payments'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // Client-side sort for mixed Timestamp / ISO string fields
+      rows.sort((a, b) => {
+        const da = safeToDate(a.createdAt);
+        const db_ = safeToDate(b.createdAt);
+        if (da && db_) return db_ - da;
+        if (da) return -1;
+        if (db_) return 1;
+        return 0;
+      });
+      setPayments(rows);
+    } catch (e) {
+      console.error('Error fetching payments:', e);
+      setPayments([]);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  const filteredPayments = useMemo(() => {
+    const q = paymentsSearch.trim().toLowerCase();
+    if (!q) return payments;
+    return payments.filter((p) => {
+      const name = (p.customerName || '').toLowerCase();
+      const phone = (p.phone || '').toLowerCase();
+      const orderId = (p.orderId || p.order_id || p.customerOrderId || '').toLowerCase();
+      return name.includes(q) || phone.includes(q) || orderId.includes(q);
+    });
+  }, [payments, paymentsSearch]);
+
   const stats = {
     totalProducts: products.length,
     totalOrders: orders.length,
@@ -478,7 +542,10 @@ const AdminPage = () => {
                 Orders
               </button>
               <button
-                onClick={() => setActiveTab('payments')}
+                onClick={() => {
+                  setActiveTab('payments');
+                  if (payments.length === 0) fetchPayments();
+                }}
                 className={`py-4 border-b-2 font-medium ${
                   activeTab === 'payments'
                     ? 'border-gold-500 text-gold-600'
@@ -1287,21 +1354,103 @@ const AdminPage = () => {
 
             {activeTab === 'payments' && (
               <div>
-                <h2 className="font-semibold text-luxury-900 mb-4">
-                  Payments
-                </h2>
-                <div className="bg-luxury-50 border border-luxury-200 rounded-xl p-6 text-luxury-600">
-                  Payments list is available inside the Revenue dashboard.
-                  <div className="mt-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="font-semibold text-luxury-900">All Payments</h2>
+                    <p className="text-xs text-luxury-500 mt-0.5">Sorted by latest first · {filteredPayments.length} record{filteredPayments.length !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-luxury-400" />
+                      <input
+                        value={paymentsSearch}
+                        onChange={(e) => setPaymentsSearch(e.target.value)}
+                        placeholder="Search name, phone, order ID…"
+                        className="w-full pl-9 pr-3 py-2 border border-luxury-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gold-500"
+                      />
+                    </div>
                     <button
-                      type="button"
-                      onClick={() => setActiveTab('revenue')}
-                      className="btn-primary"
+                      onClick={fetchPayments}
+                      className="px-3 py-2 text-sm bg-gold-500 text-white rounded-lg hover:bg-gold-600 transition-colors whitespace-nowrap"
                     >
-                      Go to Revenue
+                      Refresh
                     </button>
                   </div>
                 </div>
+
+                {paymentsLoading ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="skeleton h-12 rounded-lg" />
+                    ))}
+                  </div>
+                ) : filteredPayments.length === 0 ? (
+                  <div className="text-center py-12 bg-luxury-50 rounded-xl">
+                    <Clock className="w-10 h-10 text-luxury-300 mx-auto mb-3" />
+                    <p className="font-medium text-luxury-700">No payment records found</p>
+                    <p className="text-sm text-luxury-500 mt-1">Completed payments will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-luxury-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Date &amp; Time</th>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Order ID</th>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Customer</th>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Phone</th>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Amount</th>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Method</th>
+                          <th className="px-4 py-3 text-left font-medium text-luxury-700">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-luxury-100">
+                        {filteredPayments.map((p) => {
+                          const created = safeToDate(p.createdAt);
+                          const dateStr = created
+                            ? created.toLocaleString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '—';
+                          const amount = p.amount
+                            ? `₹${(Number(p.amount) / 100).toLocaleString('en-IN')}`
+                            : p.total
+                            ? `₹${Number(p.total).toLocaleString('en-IN')}`
+                            : '—';
+                          const statusVal = (p.paymentStatus || '').toLowerCase();
+                          const statusClass =
+                            statusVal === 'paid'
+                              ? 'bg-green-100 text-green-700'
+                              : statusVal === 'failed' || statusVal === 'cancelled'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-amber-100 text-amber-700';
+                          const orderId = p.customerOrderId || p.orderId || p.order_id || p.id;
+                          return (
+                            <tr key={p.id} className="hover:bg-luxury-50 transition-colors">
+                              <td className="px-4 py-3 text-luxury-600 whitespace-nowrap">{dateStr}</td>
+                              <td className="px-4 py-3 font-mono text-xs text-luxury-900">
+                                {orderId ? String(orderId).slice(0, 12).toUpperCase() : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-luxury-900">{p.customerName || '—'}</td>
+                              <td className="px-4 py-3 text-luxury-600">{p.phone || '—'}</td>
+                              <td className="px-4 py-3 font-semibold text-luxury-900">{amount}</td>
+                              <td className="px-4 py-3 text-luxury-600 capitalize">{p.paymentMethod || '—'}</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusClass}`}>
+                                  {p.paymentStatus || 'Pending'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
