@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Briefcase, MapPin, Sparkles, Navigation } from 'lucide-react';
 import SeoHelmet from '../utils/seoHelmet';
+import { getWebPageSchema } from '../utils/structuredData';
 
 const Careers = () => {
   const handleApply = (e, subject) => {
@@ -25,8 +26,15 @@ const Careers = () => {
   return (
     <div className="bg-[#2B1F13] text-[#f5f0e8] min-h-screen font-sans">
       <SeoHelmet 
-        title="Careers | Panstellia"
-        description="Join the Panstellia team. We're looking for passionate individuals to help us bring exquisite jewelry to life."
+        title="Careers | Join the Panstellia Team"
+        description="Join Panstellia — we're hiring for Social Media, Customer Delight, and Jewelry QC roles. Based in Neyveli with remote options. Be part of a luxury jewelry brand."
+        canonical="https://panstellia.com/careers"
+        structuredData={getWebPageSchema({
+          name: 'Careers — Panstellia',
+          description: 'Join the Panstellia team. Open roles in Social Media, Customer Delight, and Jewelry QC. Based in Neyveli with remote options.',
+          url: 'https://panstellia.com/careers',
+          breadcrumbName: 'Careers'
+        })}
       />
 
       {/* Hero Banner */}

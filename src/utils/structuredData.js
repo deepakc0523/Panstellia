@@ -52,43 +52,62 @@ export const getOrganizationSchema = () => ({
 export const getSiteNavigationSchema = () => ({
   '@context': 'https://schema.org',
   '@type': 'ItemList',
+  'name': 'Panstellia Site Navigation',
   'itemListElement': [
     {
       '@type': 'SiteNavigationElement',
       'position': 1,
-      'name': 'Shop All Collections',
-      'description': 'Browse our complete range of exquisite necklace jewelry',
+      'name': 'Shop',
+      'description': 'Browse our complete range of luxury necklace jewelry — Gold, Silver, Party Wear and more.',
       'url': 'https://panstellia.com/products'
     },
     {
       '@type': 'SiteNavigationElement',
       'position': 2,
       'name': 'Elite Series',
-      'description': 'Discover our premium, handcrafted Elite Series jewelry',
+      'description': 'Discover our premium, handcrafted Elite Series (Lux Wear) luxury jewelry collection.',
       'url': 'https://panstellia.com/products?category=Lux%20Wear'
     },
     {
       '@type': 'SiteNavigationElement',
       'position': 3,
       'name': 'About Us',
-      'description': 'Learn about Panstellia’s brand, heritage, and story',
+      'description': 'Learn about Panstellia — our story, founder Cimeon Moses, and our brand values.',
       'url': 'https://panstellia.com/about-us'
     },
     {
       '@type': 'SiteNavigationElement',
       'position': 4,
-      'name': 'New Arrivals',
-      'description': 'Explore our latest jewelry additions and trending pieces',
-      'url': 'https://panstellia.com/products'
-    },
-    {
-      '@type': 'SiteNavigationElement',
-      'position': 5,
       'name': 'Careers',
-      'description': 'Join the Panstellia team and craft brilliance with us',
+      'description': 'Join the Panstellia team. Open roles in Neyveli and remote across design, content, and operations.',
       'url': 'https://panstellia.com/careers'
     }
   ]
+});
+
+/**
+ * WebPage schema — emit on individual pages so Google
+ * can index each page as a distinct, named entity.
+ * breadcrumbName: short label shown in sitelinks (e.g. "About Us")
+ */
+export const getWebPageSchema = ({ name, description, url, breadcrumbName }) => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name,
+  description,
+  url,
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://panstellia.com' },
+      { '@type': 'ListItem', position: 2, name: breadcrumbName, item: url }
+    ]
+  },
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Panstellia',
+    url: 'https://panstellia.com'
+  }
 });
 
 export const getProductSchema = (product) => ({

@@ -8,6 +8,7 @@ import SEOHelmet from '../utils/seoHelmet';
 import { getCategoryLabel, categoryLabelMap } from '../utils/categoryLabels';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { getWebPageSchema } from '../utils/structuredData';
 
 const DEFAULT_FILTERS_FALLBACK = [
   {
@@ -616,10 +617,39 @@ const ProductsPage = () => {
   return (
     <div className="min-h-screen bg-luxury-50 py-8">
       <SEOHelmet
-        title={`${(filters.category && filters.category.length === 1) ? getCategoryLabel(filters.category[0]) : 'All'} Necklaces | Panstellia`}
-        description={`Browse our ${(filters.category && filters.category.length === 1) ? getCategoryLabel(filters.category[0]).toLowerCase() : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`}
-        keywords={`${(filters.category && filters.category.length === 1) ? getCategoryLabel(filters.category[0]).toLowerCase() + ' necklaces' : 'necklaces'}, jewelry, luxury jewelry`}
+        title={`${
+          (filters.category && filters.category.length === 1 && filters.category[0] === 'Lux Wear')
+            ? 'Elite Series'
+            : (filters.category && filters.category.length === 1)
+            ? getCategoryLabel(filters.category[0])
+            : 'Shop'
+        } | Panstellia`}
+        description={`${
+          (filters.category && filters.category.length === 1 && filters.category[0] === 'Lux Wear')
+            ? 'Explore Panstellia’s Elite Series — premium, handcrafted Lux Wear luxury necklace jewelry for every special occasion.'
+            : `Browse our ${(filters.category && filters.category.length === 1) ? getCategoryLabel(filters.category[0]).toLowerCase() : 'complete collection of'} necklace jewelry. Premium quality designs for every occasion.`
+        }`}
+        keywords={`${
+          (filters.category && filters.category.length === 1 && filters.category[0] === 'Lux Wear')
+            ? 'elite series jewelry, lux wear necklaces, premium jewelry, luxury necklace'
+            : `${(filters.category && filters.category.length === 1) ? getCategoryLabel(filters.category[0]).toLowerCase() + ' necklaces' : 'necklaces'}, jewelry, luxury jewelry`
+        }`}
         canonical={`https://panstellia.com/products${(filters.category && filters.category.length === 1) ? `?category=${filters.category[0]}` : ''}`}
+        structuredData={getWebPageSchema(
+          (filters.category && filters.category.length === 1 && filters.category[0] === 'Lux Wear')
+            ? {
+                name: 'Elite Series — Panstellia',
+                description: 'Explore Panstellia’s Elite Series — premium Lux Wear luxury necklace jewelry.',
+                url: 'https://panstellia.com/products?category=Lux%20Wear',
+                breadcrumbName: 'Elite Series'
+              }
+            : {
+                name: 'Shop — Panstellia',
+                description: 'Browse our complete range of luxury necklace jewelry — Gold, Silver, Party Wear and more.',
+                url: 'https://panstellia.com/products',
+                breadcrumbName: 'Shop'
+              }
+        )}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 md:mt-8">
