@@ -34,6 +34,24 @@ export default function AdminShippingFee() {
             shippingCharge: Number(data.shippingCharge ?? 99),
             freeShippingThreshold: Number(data.freeShippingThreshold ?? 999)
           });
+        } else {
+          // Admin auto-initializes settings document if it doesn't exist
+          const configRef = doc(db, 'ShippingSettings', 'config');
+          const defaultSettings = {
+            shippingEnabled: true,
+            freeShippingEnabled: true,
+            shippingCharge: 99,
+            freeShippingThreshold: 999,
+            updatedBy: user?.email || 'System (Admin Init)',
+            updatedAt: new Date().toISOString()
+          };
+          await setDoc(configRef, defaultSettings);
+          setShippingSettings({
+            shippingEnabled: defaultSettings.shippingEnabled,
+            freeShippingEnabled: defaultSettings.freeShippingEnabled,
+            shippingCharge: defaultSettings.shippingCharge,
+            freeShippingThreshold: defaultSettings.freeShippingThreshold
+          });
         }
         await loadLogs();
       } catch (err) {
@@ -44,7 +62,7 @@ export default function AdminShippingFee() {
       }
     };
     loadData();
-  }, []);
+  }, [user]);
 
   const loadLogs = async () => {
     try {

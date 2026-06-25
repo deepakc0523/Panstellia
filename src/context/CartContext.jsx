@@ -36,19 +36,13 @@ export const CartProvider = ({ children }) => {
           freeShippingThreshold: Number(data.freeShippingThreshold ?? 999)
         });
       } else {
-        // Automatically create default settings if none exist
-        try {
-          await setDoc(doc(db, 'ShippingSettings', 'config'), {
-            shippingEnabled: true,
-            freeShippingEnabled: true,
-            shippingCharge: 99,
-            freeShippingThreshold: 999,
-            updatedBy: 'System (Auto-initialization)',
-            updatedAt: new Date().toISOString()
-          });
-        } catch (err) {
-          console.error('Failed to initialize default shipping settings:', err);
-        }
+        // Fallback to default state values on storefront
+        setShippingSettings({
+          shippingEnabled: true,
+          freeShippingEnabled: true,
+          shippingCharge: 99,
+          freeShippingThreshold: 999
+        });
       }
     }, (error) => {
       console.error('Error listening to shipping settings:', error);
