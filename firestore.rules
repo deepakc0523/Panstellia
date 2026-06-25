@@ -173,6 +173,12 @@ service cloud.firestore {
       allow write: if hasRole(['super_admin', 'admin']);
     }
 
+    // Shipping Settings (threshold, standard charge, status toggles)
+    match /ShippingSettings/{settingId} {
+      allow read: if true; // Publicly readable for checkout calculation
+      allow write: if hasRole(['super_admin', 'admin']); // Restricted to admin roles
+    }
+
     // Settings history versions
     match /settings_history/{historyId} {
       allow read: if hasRole(['super_admin', 'admin']);
